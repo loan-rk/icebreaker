@@ -14,7 +14,159 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      game_state: {
+        Row: {
+          id: number
+          paused: boolean
+          phase: string
+          phase_started_at: string
+          question_id: number
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          paused?: boolean
+          phase?: string
+          phase_started_at?: string
+          question_id?: number
+          updated_at?: string
+        }
+        Update: {
+          id?: number
+          paused?: boolean
+          phase?: string
+          phase_started_at?: string
+          question_id?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      options: {
+        Row: {
+          emoji: string
+          id: string
+          label: string
+          position: number
+          question_id: number
+          short_label: string
+        }
+        Insert: {
+          emoji: string
+          id: string
+          label: string
+          position: number
+          question_id: number
+          short_label: string
+        }
+        Update: {
+          emoji?: string
+          id?: string
+          label?: string
+          position?: number
+          question_id?: number
+          short_label?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "options_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      participants: {
+        Row: {
+          color: string
+          created_at: string
+          id: string
+          is_host: boolean
+          name: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          id?: string
+          is_host?: boolean
+          name: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          id?: string
+          is_host?: boolean
+          name?: string
+        }
+        Relationships: []
+      }
+      questions: {
+        Row: {
+          id: number
+          prompt: string
+          title: string
+        }
+        Insert: {
+          id: number
+          prompt: string
+          title: string
+        }
+        Update: {
+          id?: number
+          prompt?: string
+          title?: string
+        }
+        Relationships: []
+      }
+      responses: {
+        Row: {
+          created_at: string
+          id: string
+          kind: string
+          option_id: string
+          participant_id: string
+          question_id: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kind: string
+          option_id: string
+          participant_id: string
+          question_id: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kind?: string
+          option_id?: string
+          participant_id?: string
+          question_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "responses_option_id_fkey"
+            columns: ["option_id"]
+            isOneToOne: false
+            referencedRelation: "options"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "responses_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "responses_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
