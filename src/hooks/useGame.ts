@@ -136,12 +136,12 @@ export function useGame() {
   const players = useMemo(() => participants.filter((p) => !p.is_host), [participants]);
 
   const currentAnswers = useMemo(() => {
-    if (!state) return { prediction: [], vote: [] } as Record<string, ResponseRow[]>;
+    if (!state) return { prediction: [] as ResponseRow[], vote: [] as ResponseRow[] };
     const forQ = responses.filter((r) => r.question_id === state.question_id);
     return {
       prediction: forQ.filter((r) => r.kind === "prediction"),
       vote: forQ.filter((r) => r.kind === "vote"),
-    } as Record<string, ResponseRow[]>;
+    };
   }, [responses, state]);
 
   const everyoneAnswered =
