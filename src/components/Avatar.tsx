@@ -8,7 +8,7 @@ export function Avatar({
   done = false,
   accent = false,
 }: {
-  name?: string;
+  name?: string | undefined;
   size?: number;
   done?: boolean;
   accent?: boolean;
