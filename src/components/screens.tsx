@@ -260,7 +260,7 @@ function RevealColumn({
       <div className="mt-4 flex h-10 items-center">
         <div className="h-3 w-full overflow-hidden rounded-full bg-surface-strong">
           <div
-            className={cn("h-full rounded-full transition-none", winner ? "bg-primary" : "bg-muted-foreground/60")}
+            className={cn("h-full rounded-full transition-none", winner ? "btn-rk" : "bg-muted-foreground/60")}
             style={{ width: `${shown}%` }}
           />
         </div>
