@@ -36,7 +36,7 @@ export function JoinScreen({
         <button
           type="submit"
           disabled={!name.trim()}
-          className="w-full rounded-xl bg-primary px-4 py-3 font-semibold text-primary-foreground transition-opacity disabled:opacity-40"
+          className="btn-rk btn-rk-hover w-full px-4 py-3 font-semibold disabled:pointer-events-none disabled:opacity-40"
         >
           {hostMode ? "Rejoindre en animateur" : "Rejoindre"}
         </button>
@@ -87,7 +87,7 @@ export function Lobby({
       {isHost && (
         <button
           onClick={onStart}
-          className="flex items-center gap-2 rounded-xl bg-primary px-6 py-3 font-semibold text-primary-foreground"
+          className="btn-rk btn-rk-hover flex items-center gap-2 px-6 py-3 font-semibold"
         >
           Démarrer le jeu <ArrowRight className="h-4 w-4" />
         </button>

@@ -30,7 +30,7 @@ export function HostPanel({
   onResetAll: () => void;
 }) {
   return (
-    <div className="fixed bottom-4 left-1/2 z-50 flex -translate-x-1/2 items-center gap-2 rounded-2xl bg-surface-strong px-3 py-2 shadow-lg">
+    <div className="fixed bottom-4 left-1/2 z-50 flex -translate-x-1/2 items-center gap-2 rounded-full border border-white/10 bg-surface-strong/95 px-3 py-2 shadow-lg backdrop-blur">
       <div className="px-2 text-xs leading-tight">
         <div className="font-semibold">{PHASE_LABEL[phase]}</div>
         <div className="text-muted-foreground">Q{questionId}/6 · Animateur</div>
