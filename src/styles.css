@@ -35,6 +35,9 @@
   --color-ring: var(--ring);
   --color-surface: var(--surface);
   --color-surface-strong: var(--surface-strong);
+  --color-primary-glow: var(--primary-glow);
+  --font-sans: "Poppins", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Poppins", ui-sans-serif, system-ui, sans-serif;
 }
 
 :root {
@@ -47,8 +50,10 @@
   --card-foreground: oklch(1 0 0);
   --popover: oklch(0.318 0 0);
   --popover-foreground: oklch(1 0 0);
-  --primary: oklch(0.729 0.164 41.5); /* #FF7F50 */
-  --primary-foreground: oklch(0.2 0.02 40);
+  --primary: oklch(0.679 0.198 22.5); /* #FF5E5B — corail RadioKing */
+  --primary-glow: oklch(0.766 0.161 55); /* #FF9B44 — orange dégradé */
+  --primary-foreground: oklch(1 0 0);
+  --gradient-primary: linear-gradient(100deg, var(--primary) 0%, var(--primary-glow) 100%);
   --secondary: oklch(0.372 0 0);
   --secondary-foreground: oklch(1 0 0);
   --muted: oklch(0.372 0 0);
