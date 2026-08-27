@@ -53,10 +53,20 @@ export function HostPanel({
       </button>
       <button
         onClick={onRestart}
-        title="Réinitialiser la partie"
+        title="Retour au lobby (garde les participants)"
         className="rounded-xl bg-surface p-2 text-muted-foreground hover:text-foreground"
       >
         <RotateCcw className="h-4 w-4" />
+      </button>
+      <button
+        onClick={() => {
+          if (window.confirm("Réinitialiser complètement la partie ? Tous les participants et leurs réponses seront supprimés."))
+            onResetAll();
+        }}
+        title="Réinitialiser tout (supprime les participants)"
+        className="rounded-xl bg-surface p-2 text-muted-foreground hover:text-primary"
+      >
+        <Trash2 className="h-4 w-4" />
       </button>
     </div>
   );

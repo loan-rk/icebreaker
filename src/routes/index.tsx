@@ -72,9 +72,11 @@ function Index() {
   if (phase === "lobby") {
     screen = <Lobby players={g.players} isHost={isHost} onStart={() => void g.advance()} />;
   } else if (phase === "flash_predict") {
-    screen = <FlashScreen text="À toi de deviner ce que la majorité va choisir" />;
+    screen = (
+      <FlashScreen text="À toi de deviner ce que la majorité va choisir" exitAfterMs={FLASH_MS - 450} />
+    );
   } else if (phase === "flash_vote") {
-    screen = <FlashScreen text="À toi de choisir" />;
+    screen = <FlashScreen text="À toi de choisir" exitAfterMs={FLASH_MS - 450} />;
   } else if ((phase === "predict" || phase === "vote") && question) {
     const kind = phase === "predict" ? "prediction" : "vote";
     screen = (
