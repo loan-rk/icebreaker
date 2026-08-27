@@ -108,8 +108,27 @@ function Index() {
   }
 
   return (
-    <main className="min-h-screen bg-background">
-      {screen}
+    <main className="relative min-h-screen bg-background">
+      {/* Vagues sombres façon radioking.com */}
+      <div className="rk-waves" aria-hidden>
+        <svg
+          viewBox="0 0 1440 900"
+          preserveAspectRatio="none"
+          className="h-full w-full opacity-70"
+        >
+          <path
+            d="M0,0 H520 C430,220 700,330 610,540 C540,720 690,820 760,900 H0 Z"
+            fill="#ffffff"
+            fillOpacity="0.025"
+          />
+          <path
+            d="M1440,0 H980 C1080,200 830,340 950,540 C1040,700 1180,800 1240,900 H1440 Z"
+            fill="#ffffff"
+            fillOpacity="0.04"
+          />
+        </svg>
+      </div>
+      <div className="relative z-10">{screen}</div>
       {isHost && (
         <HostPanel
           phase={phase}

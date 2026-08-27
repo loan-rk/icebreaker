@@ -36,7 +36,7 @@ export function JoinScreen({
         <button
           type="submit"
           disabled={!name.trim()}
-          className="w-full rounded-xl bg-primary px-4 py-3 font-semibold text-primary-foreground transition-opacity disabled:opacity-40"
+          className="btn-rk btn-rk-hover w-full px-4 py-3 font-semibold disabled:pointer-events-none disabled:opacity-40"
         >
           {hostMode ? "Rejoindre en animateur" : "Rejoindre"}
         </button>
@@ -87,7 +87,7 @@ export function Lobby({
       {isHost && (
         <button
           onClick={onStart}
-          className="flex items-center gap-2 rounded-xl bg-primary px-6 py-3 font-semibold text-primary-foreground"
+          className="btn-rk btn-rk-hover flex items-center gap-2 px-6 py-3 font-semibold"
         >
           Démarrer le jeu <ArrowRight className="h-4 w-4" />
         </button>
@@ -111,11 +111,11 @@ export function FlashScreen({ text, exitAfterMs }: { text: string; exitAfterMs?:
     <div className="flex min-h-screen items-center justify-center overflow-hidden px-8">
       <p
         className={cn(
-          "text-center text-3xl font-bold leading-tight sm:text-5xl",
+          "max-w-3xl text-center text-3xl font-extrabold leading-tight tracking-tight sm:text-5xl",
           leaving ? "animate-flash-out-left" : "animate-flash-in",
         )}
       >
-        <span className="text-primary">›</span> {text}
+        <span className="text-gradient-rk">{text}</span>
       </p>
     </div>
   );
@@ -168,8 +168,10 @@ export function AnswerScreen({
               disabled={isHost}
               onClick={() => onPick(o.id)}
               className={cn(
-                "flex items-center gap-4 rounded-xl bg-surface px-5 py-4 text-left transition-colors",
-                picked ? "ring-2 ring-primary" : "hover:bg-surface-strong",
+                "flex items-center gap-4 rounded-2xl border border-white/5 bg-surface px-5 py-4 text-left transition-all",
+                picked
+                  ? "border-primary/60 shadow-[0_10px_24px_-14px_var(--primary)] ring-2 ring-primary"
+                  : "hover:-translate-y-0.5 hover:bg-surface-strong",
                 isHost && "cursor-default opacity-70",
               )}
             >
@@ -258,7 +260,7 @@ function RevealColumn({
       <div className="mt-4 flex h-10 items-center">
         <div className="h-3 w-full overflow-hidden rounded-full bg-surface-strong">
           <div
-            className={cn("h-full rounded-full transition-none", winner ? "bg-primary" : "bg-muted-foreground/60")}
+            className={cn("h-full rounded-full transition-none", winner ? "btn-rk" : "bg-muted-foreground/60")}
             style={{ width: `${shown}%` }}
           />
         </div>
