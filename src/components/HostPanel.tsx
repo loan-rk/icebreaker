@@ -38,8 +38,8 @@ export function HostPanel({
       <button
         onClick={onTogglePause}
         className={cn(
-          "flex items-center gap-1 rounded-xl px-3 py-2 text-sm",
-          paused ? "bg-primary text-primary-foreground" : "bg-surface",
+          "flex items-center gap-1 rounded-full px-3 py-2 text-sm transition-colors",
+          paused ? "btn-rk" : "bg-surface hover:bg-surface-strong",
         )}
       >
         {paused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
@@ -47,14 +47,14 @@ export function HostPanel({
       </button>
       <button
         onClick={onNext}
-        className="flex items-center gap-1 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
+        className="btn-rk btn-rk-hover flex items-center gap-1 px-4 py-2 text-sm font-semibold"
       >
         Suivant <SkipForward className="h-4 w-4" />
       </button>
       <button
         onClick={onRestart}
         title="Retour au lobby (garde les participants)"
-        className="rounded-xl bg-surface p-2 text-muted-foreground hover:text-foreground"
+        className="rounded-full bg-surface p-2 text-muted-foreground hover:text-foreground"
       >
         <RotateCcw className="h-4 w-4" />
       </button>
@@ -64,7 +64,7 @@ export function HostPanel({
             onResetAll();
         }}
         title="Réinitialiser tout (supprime les participants)"
-        className="rounded-xl bg-surface p-2 text-muted-foreground hover:text-primary"
+        className="rounded-full bg-surface p-2 text-muted-foreground hover:text-primary"
       >
         <Trash2 className="h-4 w-4" />
       </button>
