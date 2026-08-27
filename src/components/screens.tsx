@@ -332,6 +332,12 @@ export function Constellation({
   const nodes = useMemo(() => {
     const votes = responses.filter((r) => r.kind === "vote");
     const n = options.length;
+    // Best count per question => that option is the majority node
+    const best = new Map<number, number>();
+    for (const o of options) {
+      const c = votes.filter((v) => v.option_id === o.id).length;
+      best.set(o.question_id, Math.max(best.get(o.question_id) ?? 0, c));
+    }
     return options.map((o, i) => {
       const qVotes = votes.filter((v) => v.question_id === o.question_id);
       const mine = qVotes.filter((v) => v.option_id === o.id).length;
@@ -341,12 +347,28 @@ export function Constellation({
       return {
         ...o,
         pct,
-        major: pct >= 50,
+        major: mine > 0 && mine === best.get(o.question_id),
         x: 400 + Math.cos(angle) * radius,
         y: 330 + Math.sin(angle) * radius * 0.72,
       };
     });
   }, [options, responses]);
+
+  const edges = useMemo(() => {
+    const out: { key: string; a: (typeof nodes)[number]; b: (typeof nodes)[number]; strong: boolean }[] = [];
+    for (let i = 0; i < nodes.length; i++) {
+      for (let j = i + 1; j < nodes.length; j++) {
+        const a = nodes[i]!;
+        const b = nodes[j]!;
+        const sameQuestion = a.question_id === b.question_id;
+        const bothMajor = a.major && b.major;
+        // Majority nodes form the dense web; minority nodes only link to their own question.
+        if (!bothMajor && !sameQuestion) continue;
+        out.push({ key: `${a.id}-${b.id}`, a, b, strong: bothMajor });
+      }
+    }
+    return out;
+  }, [nodes]);
 
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-5xl flex-col items-center justify-center gap-6 px-4 py-16">
