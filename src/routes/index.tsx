@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useGame } from "@/hooks/useGame";
+import { FLASH_MS } from "@/lib/game";
 import { HostPanel } from "@/components/HostPanel";
 import {
   AnswerScreen,
@@ -117,6 +118,7 @@ function Index() {
           onNext={() => void g.advance()}
           onTogglePause={() => void g.togglePause()}
           onRestart={() => void g.restart()}
+          onResetAll={() => void g.resetAll()}
         />
       )}
     </main>
