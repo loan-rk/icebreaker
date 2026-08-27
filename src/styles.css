@@ -58,13 +58,14 @@
   --secondary-foreground: oklch(1 0 0);
   --muted: oklch(0.372 0 0);
   --muted-foreground: oklch(0.78 0 0);
-  --accent: oklch(0.729 0.164 41.5);
-  --accent-foreground: oklch(0.2 0.02 40);
+  --accent: oklch(0.679 0.198 22.5);
+  --accent-foreground: oklch(1 0 0);
   --destructive: oklch(0.62 0.21 25);
   --destructive-foreground: oklch(1 0 0);
   --border: oklch(0.4 0 0);
   --input: oklch(0.4 0 0);
-  --ring: oklch(0.729 0.164 41.5);
+  --ring: oklch(0.679 0.198 22.5);
+  --shadow-cta: 0 12px 28px -12px color-mix(in oklab, var(--primary) 70%, transparent);
 }
 
 @layer base {
@@ -76,13 +77,59 @@
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
+    font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
+  }
+
+  h1,
+  h2,
+  h3 {
+    letter-spacing: -0.02em;
   }
 }
 
 @utility flat-card {
   background-color: var(--color-surface);
   border-radius: var(--radius-xl);
+}
+
+/* Bouton signature RadioKing : dégradé corail → orange, pilule, ombre douce. */
+@utility btn-rk {
+  background-image: var(--gradient-primary);
+  color: var(--color-primary-foreground);
+  border-radius: 9999px;
+  box-shadow: var(--shadow-cta);
+  transition:
+    transform 0.2s ease,
+    filter 0.2s ease;
+}
+
+@utility btn-rk-hover {
+  &:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.06);
+  }
+}
+
+@utility text-gradient-rk {
+  background-image: var(--gradient-primary);
+  background-clip: text;
+  color: transparent;
+}
+
+/* Vagues sombres superposées, comme le hero radioking.com */
+@utility rk-waves {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      120% 80% at 85% -10%,
+      color-mix(in oklab, var(--primary) 12%, transparent) 0%,
+      transparent 60%
+    ),
+    var(--color-background);
 }
 
 @keyframes flash-in {
