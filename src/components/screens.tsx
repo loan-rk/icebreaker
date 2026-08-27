@@ -95,9 +95,19 @@ export function Lobby({
           Démarrer le jeu <ArrowRight className="h-4 w-4" />
         </button>
       )}
+
+      {onLeave && (
+        <button
+          onClick={onLeave}
+          className="text-xs text-muted-foreground/60 underline-offset-4 hover:text-foreground hover:underline"
+        >
+          Quitter
+        </button>
+      )}
     </div>
   );
 }
+
 
 /* ---------------- Flash ---------------- */
 
