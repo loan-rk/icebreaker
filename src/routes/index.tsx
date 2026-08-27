@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useGame } from "@/hooks/useGame";
+import { FLASH_MS } from "@/lib/game";
 import { HostPanel } from "@/components/HostPanel";
 import {
   AnswerScreen,
@@ -72,9 +73,11 @@ function Index() {
   if (phase === "lobby") {
     screen = <Lobby players={g.players} isHost={isHost} onStart={() => void g.advance()} />;
   } else if (phase === "flash_predict") {
-    screen = <FlashScreen text="À toi de deviner ce que la majorité va choisir" />;
+    screen = (
+      <FlashScreen text="À toi de deviner ce que la majorité va choisir" exitAfterMs={FLASH_MS - 450} />
+    );
   } else if (phase === "flash_vote") {
-    screen = <FlashScreen text="À toi de choisir" />;
+    screen = <FlashScreen text="À toi de choisir" exitAfterMs={FLASH_MS - 450} />;
   } else if ((phase === "predict" || phase === "vote") && question) {
     const kind = phase === "predict" ? "prediction" : "vote";
     screen = (
@@ -115,6 +118,7 @@ function Index() {
           onNext={() => void g.advance()}
           onTogglePause={() => void g.togglePause()}
           onRestart={() => void g.restart()}
+          onResetAll={() => void g.resetAll()}
         />
       )}
     </main>

@@ -1,4 +1,4 @@
-import { Pause, Play, SkipForward, RotateCcw } from "lucide-react";
+import { Pause, Play, SkipForward, RotateCcw, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Phase } from "@/lib/game";
 
@@ -19,6 +19,7 @@ export function HostPanel({
   onNext,
   onTogglePause,
   onRestart,
+  onResetAll,
 }: {
   phase: Phase;
   questionId: number;
@@ -26,6 +27,7 @@ export function HostPanel({
   onNext: () => void;
   onTogglePause: () => void;
   onRestart: () => void;
+  onResetAll: () => void;
 }) {
   return (
     <div className="fixed bottom-4 left-1/2 z-50 flex -translate-x-1/2 items-center gap-2 rounded-2xl bg-surface-strong px-3 py-2 shadow-lg">
@@ -51,10 +53,20 @@ export function HostPanel({
       </button>
       <button
         onClick={onRestart}
-        title="Réinitialiser la partie"
+        title="Retour au lobby (garde les participants)"
         className="rounded-xl bg-surface p-2 text-muted-foreground hover:text-foreground"
       >
         <RotateCcw className="h-4 w-4" />
+      </button>
+      <button
+        onClick={() => {
+          if (window.confirm("Réinitialiser complètement la partie ? Tous les participants et leurs réponses seront supprimés."))
+            onResetAll();
+        }}
+        title="Réinitialiser tout (supprime les participants)"
+        className="rounded-xl bg-surface p-2 text-muted-foreground hover:text-primary"
+      >
+        <Trash2 className="h-4 w-4" />
       </button>
     </div>
   );

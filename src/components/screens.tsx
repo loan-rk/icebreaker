@@ -98,10 +98,23 @@ export function Lobby({
 
 /* ---------------- Flash ---------------- */
 
-export function FlashScreen({ text }: { text: string }) {
+export function FlashScreen({ text, exitAfterMs }: { text: string; exitAfterMs?: number }) {
+  const [leaving, setLeaving] = useState(false);
+  useEffect(() => {
+    setLeaving(false);
+    if (!exitAfterMs) return;
+    const t = setTimeout(() => setLeaving(true), Math.max(0, exitAfterMs));
+    return () => clearTimeout(t);
+  }, [text, exitAfterMs]);
+
   return (
-    <div className="flex min-h-screen items-center justify-center px-8">
-      <p className="animate-flash-in text-center text-3xl font-bold leading-tight sm:text-5xl">
+    <div className="flex min-h-screen items-center justify-center overflow-hidden px-8">
+      <p
+        className={cn(
+          "text-center text-3xl font-bold leading-tight sm:text-5xl",
+          leaving ? "animate-flash-out-left" : "animate-flash-in",
+        )}
+      >
         <span className="text-primary">›</span> {text}
       </p>
     </div>
@@ -319,6 +332,12 @@ export function Constellation({
   const nodes = useMemo(() => {
     const votes = responses.filter((r) => r.kind === "vote");
     const n = options.length;
+    // Best count per question => that option is the majority node
+    const best = new Map<number, number>();
+    for (const o of options) {
+      const c = votes.filter((v) => v.option_id === o.id).length;
+      best.set(o.question_id, Math.max(best.get(o.question_id) ?? 0, c));
+    }
     return options.map((o, i) => {
       const qVotes = votes.filter((v) => v.question_id === o.question_id);
       const mine = qVotes.filter((v) => v.option_id === o.id).length;
@@ -328,12 +347,28 @@ export function Constellation({
       return {
         ...o,
         pct,
-        major: pct >= 50,
+        major: mine > 0 && mine === best.get(o.question_id),
         x: 400 + Math.cos(angle) * radius,
         y: 330 + Math.sin(angle) * radius * 0.72,
       };
     });
   }, [options, responses]);
+
+  const edges = useMemo(() => {
+    const out: { key: string; a: (typeof nodes)[number]; b: (typeof nodes)[number]; strong: boolean }[] = [];
+    for (let i = 0; i < nodes.length; i++) {
+      for (let j = i + 1; j < nodes.length; j++) {
+        const a = nodes[i]!;
+        const b = nodes[j]!;
+        const sameQuestion = a.question_id === b.question_id;
+        const bothMajor = a.major && b.major;
+        // Majority nodes form the dense web; minority nodes only link to their own question.
+        if (!bothMajor && !sameQuestion) continue;
+        out.push({ key: `${a.id}-${b.id}`, a, b, strong: bothMajor });
+      }
+    }
+    return out;
+  }, [nodes]);
 
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-5xl flex-col items-center justify-center gap-6 px-4 py-16">
@@ -348,23 +383,19 @@ export function Constellation({
       </div>
 
       <svg viewBox="0 0 800 660" className="w-full">
-        {nodes.map((a, i) =>
-          nodes.slice(i + 1).map((b) => {
-            const strong = a.major && b.major;
-            return (
-              <line
-                key={`${a.id}-${b.id}`}
-                x1={a.x}
-                y1={a.y}
-                x2={b.x}
-                y2={b.y}
-                stroke={strong ? "#FF7F50" : "#FFFFFF"}
-                strokeOpacity={strong ? 0.35 : 0.07}
-                strokeWidth={strong ? 1.4 : 0.8}
-              />
-            );
-          }),
-        )}
+        {edges.map((e) => (
+          <line
+            key={e.key}
+            x1={e.a.x}
+            y1={e.a.y}
+            x2={e.b.x}
+            y2={e.b.y}
+            stroke={e.strong ? "#FF7F50" : "#FFFFFF"}
+            strokeOpacity={e.strong ? 0.35 : 0.14}
+            strokeWidth={e.strong ? 1.4 : 0.8}
+            strokeDasharray={e.strong ? undefined : "4 6"}
+          />
+        ))}
         {nodes.map((n) => {
           const r = n.major ? 34 : 20;
           return (
