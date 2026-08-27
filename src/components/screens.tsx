@@ -383,23 +383,19 @@ export function Constellation({
       </div>
 
       <svg viewBox="0 0 800 660" className="w-full">
-        {nodes.map((a, i) =>
-          nodes.slice(i + 1).map((b) => {
-            const strong = a.major && b.major;
-            return (
-              <line
-                key={`${a.id}-${b.id}`}
-                x1={a.x}
-                y1={a.y}
-                x2={b.x}
-                y2={b.y}
-                stroke={strong ? "#FF7F50" : "#FFFFFF"}
-                strokeOpacity={strong ? 0.35 : 0.07}
-                strokeWidth={strong ? 1.4 : 0.8}
-              />
-            );
-          }),
-        )}
+        {edges.map((e) => (
+          <line
+            key={e.key}
+            x1={e.a.x}
+            y1={e.a.y}
+            x2={e.b.x}
+            y2={e.b.y}
+            stroke={e.strong ? "#FF7F50" : "#FFFFFF"}
+            strokeOpacity={e.strong ? 0.35 : 0.14}
+            strokeWidth={e.strong ? 1.4 : 0.8}
+            strokeDasharray={e.strong ? undefined : "4 6"}
+          />
+        ))}
         {nodes.map((n) => {
           const r = n.major ? 34 : 20;
           return (
