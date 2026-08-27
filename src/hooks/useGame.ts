@@ -98,6 +98,20 @@ export function useGame() {
     setMe(null);
   }, [me]);
 
+  /** Promote the local participant to host (used by the ?host= URL param). */
+  const becomeHost = useCallback(async () => {
+    if (!me || me.is_host) return;
+    const { data } = await supabase
+      .from("participants")
+      .update({ is_host: true })
+      .eq("id", me.id)
+      .select()
+      .maybeSingle();
+    if (data) setMe(data as Participant);
+    await refresh();
+  }, [me, refresh]);
+
+
   const submit = useCallback(
     async (kind: "prediction" | "vote", optionId: string) => {
       if (!me || !state) return;
