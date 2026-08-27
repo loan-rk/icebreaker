@@ -41,6 +41,12 @@ function Index() {
     if (p.get("host") === "radioking" || p.has("host")) setHostMode(true);
   }, []);
 
+  // Déjà connecté en participant mais arrivé via ?host= → promotion en animateur.
+  useEffect(() => {
+    if (hostMode && g.me && !g.me.is_host) void g.becomeHost();
+  }, [hostMode, g.me, g]);
+
+
   const question = useMemo(
     () => g.questions.find((q) => q.id === g.state?.question_id) ?? null,
     [g.questions, g.state],
