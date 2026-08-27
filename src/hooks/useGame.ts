@@ -71,6 +71,15 @@ export function useGame() {
     };
   }, [refresh]);
 
+  // If the host wiped the players, drop the local identity so the join screen returns.
+  useEffect(() => {
+    if (!ready || !me || participants.length === 0) return;
+    if (!participants.some((p) => p.id === me.id)) {
+      localStorage.removeItem(STORAGE_KEY);
+      setMe(null);
+    }
+  }, [ready, me, participants]);
+
   const join = useCallback(async (name: string, isHost: boolean) => {
     const { data, error } = await supabase
       .from("participants")
