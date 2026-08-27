@@ -77,7 +77,15 @@ function Index() {
 
   let screen: React.ReactNode = null;
   if (phase === "lobby") {
-    screen = <Lobby players={g.players} isHost={isHost} onStart={() => void g.advance()} />;
+    screen = (
+      <Lobby
+        players={g.players}
+        isHost={isHost}
+        onStart={() => void g.advance()}
+        onLeave={() => void g.leave()}
+      />
+    );
+
   } else if (phase === "flash_predict") {
     screen = (
       <FlashScreen text="À toi de deviner ce que la majorité va choisir" exitAfterMs={FLASH_MS - 450} />
