@@ -202,6 +202,8 @@ export function useGame() {
     currentAnswers,
     join,
     leave,
+    becomeHost,
+
     submit,
     advance,
     togglePause,
