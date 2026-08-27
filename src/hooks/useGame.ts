@@ -124,6 +124,14 @@ export function useGame() {
     await setGame({ phase: "lobby", question_id: 1, paused: false });
   }, [setGame]);
 
+  /** Full reset: wipes responses AND every participant (hosts kept). */
+  const resetAll = useCallback(async () => {
+    await supabase.from("responses").delete().neq("question_id", -1);
+    await supabase.from("participants").delete().eq("is_host", false);
+    await setGame({ phase: "lobby", question_id: 1, paused: false });
+    await refresh();
+  }, [setGame, refresh]);
+
   const togglePause = useCallback(async () => {
     if (!state) return;
     await supabase.from("game_state").update({ paused: !state.paused }).eq("id", 1);
@@ -175,6 +183,7 @@ export function useGame() {
     advance,
     togglePause,
     restart,
+    resetAll,
     setGame,
   };
 }
