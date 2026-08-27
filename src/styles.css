@@ -95,6 +95,21 @@
   animation: flash-in 0.35s ease-out both;
 }
 
+@keyframes flash-out-left {
+  0% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-60vw) scale(0.9);
+  }
+}
+
+@utility animate-flash-out-left {
+  animation: flash-out-left 0.45s cubic-bezier(0.55, 0, 0.85, 0.35) both;
+}
+
 @keyframes pulse-ring {
   0%,
   100% {

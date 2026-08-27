@@ -98,10 +98,23 @@ export function Lobby({
 
 /* ---------------- Flash ---------------- */
 
-export function FlashScreen({ text }: { text: string }) {
+export function FlashScreen({ text, exitAfterMs }: { text: string; exitAfterMs?: number }) {
+  const [leaving, setLeaving] = useState(false);
+  useEffect(() => {
+    setLeaving(false);
+    if (!exitAfterMs) return;
+    const t = setTimeout(() => setLeaving(true), Math.max(0, exitAfterMs));
+    return () => clearTimeout(t);
+  }, [text, exitAfterMs]);
+
   return (
-    <div className="flex min-h-screen items-center justify-center px-8">
-      <p className="animate-flash-in text-center text-3xl font-bold leading-tight sm:text-5xl">
+    <div className="flex min-h-screen items-center justify-center overflow-hidden px-8">
+      <p
+        className={cn(
+          "text-center text-3xl font-bold leading-tight sm:text-5xl",
+          leaving ? "animate-flash-out-left" : "animate-flash-in",
+        )}
+      >
         <span className="text-primary">›</span> {text}
       </p>
     </div>
