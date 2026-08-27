@@ -41,6 +41,12 @@ function Index() {
     if (p.get("host") === "radioking" || p.has("host")) setHostMode(true);
   }, []);
 
+  // Déjà connecté en participant mais arrivé via ?host= → promotion en animateur.
+  useEffect(() => {
+    if (hostMode && g.me && !g.me.is_host) void g.becomeHost();
+  }, [hostMode, g.me, g]);
+
+
   const question = useMemo(
     () => g.questions.find((q) => q.id === g.state?.question_id) ?? null,
     [g.questions, g.state],
@@ -71,7 +77,15 @@ function Index() {
 
   let screen: React.ReactNode = null;
   if (phase === "lobby") {
-    screen = <Lobby players={g.players} isHost={isHost} onStart={() => void g.advance()} />;
+    screen = (
+      <Lobby
+        players={g.players}
+        isHost={isHost}
+        onStart={() => void g.advance()}
+        onLeave={() => void g.leave()}
+      />
+    );
+
   } else if (phase === "flash_predict") {
     screen = (
       <FlashScreen text="À toi de deviner ce que la majorité va choisir" exitAfterMs={FLASH_MS - 450} />

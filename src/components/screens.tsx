@@ -60,11 +60,14 @@ export function Lobby({
   players,
   isHost,
   onStart,
+  onLeave,
 }: {
   players: Participant[];
   isHost: boolean;
   onStart: () => void;
+  onLeave?: () => void;
 }) {
+
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-3xl flex-col items-center justify-center gap-8 px-6 py-16">
       <div className="text-center">
@@ -92,9 +95,19 @@ export function Lobby({
           Démarrer le jeu <ArrowRight className="h-4 w-4" />
         </button>
       )}
+
+      {onLeave && (
+        <button
+          onClick={onLeave}
+          className="text-xs text-muted-foreground/60 underline-offset-4 hover:text-foreground hover:underline"
+        >
+          Quitter
+        </button>
+      )}
     </div>
   );
 }
+
 
 /* ---------------- Flash ---------------- */
 
