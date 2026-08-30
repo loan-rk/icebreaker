@@ -51,13 +51,18 @@ export function RadioKingPlayer({
   }, []);
 
   return (
-    <div className="fixed right-3 top-3 z-40 flex flex-col items-end gap-1.5 sm:bottom-3 sm:top-auto sm:flex-col-reverse">
+    <div
+      // La boîte du conteneur est large (largeur du volet) mais souvent vide :
+      // pointer-events-none dessus, réactivé sur les seuls éléments visibles,
+      // pour ne pas intercepter les clics destinés à ce qui est en dessous.
+      className="pointer-events-none fixed right-3 top-3 z-40 flex flex-col items-end gap-1.5 sm:bottom-3 sm:top-auto sm:flex-col-reverse"
+    >
       <button
         type="button"
         onClick={() => setOuvert((o) => !o)}
         aria-expanded={ouvert}
         aria-label={ouvert ? "Replier le lecteur radio" : "Déplier le lecteur radio"}
-        className="flex items-center gap-1.5 rounded-full border border-white/10 bg-surface-strong/95 px-3 py-1.5 text-xs font-medium shadow-lg backdrop-blur transition-colors hover:border-white/25"
+        className="pointer-events-auto flex items-center gap-1.5 rounded-full border border-white/10 bg-surface-strong/95 px-3 py-1.5 text-xs font-medium shadow-lg backdrop-blur transition-colors hover:border-white/25"
       >
         <Radio className="h-3.5 w-3.5 text-primary" />
         Radio
@@ -66,8 +71,12 @@ export function RadioKingPlayer({
 
       <div
         className={cn(
-          "w-[300px] max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-md shadow-lg transition-[height,opacity] duration-200",
-          ouvert ? "h-[145px] opacity-100" : "pointer-events-none h-0 opacity-0",
+          // Largeur plafonnée en laissant ~5rem à gauche : sur très petit écran
+          // le volet déplié ne recouvre pas les boutons d'export du coin gauche.
+          "w-[300px] max-w-[calc(100vw-5rem)] overflow-hidden rounded-md shadow-lg transition-[height,opacity] duration-200",
+          ouvert
+            ? "pointer-events-auto h-[145px] opacity-100"
+            : "pointer-events-none h-0 opacity-0",
         )}
       >
         <iframe
