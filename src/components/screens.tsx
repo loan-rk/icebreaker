@@ -336,18 +336,22 @@ export function RevealScreen({
 // "partagée" : aucune réponse n'est mise en avant.
 const MARGE_MAJORITE = 0.1;
 
-const LABEL_FONT = 10.5;
-const PCT_FONT = 9.5;
+const LABEL_FONT = 11;
+const PCT_FONT = 10;
 // Largeur approximative d'un glyphe (fraction de la taille de police) : sert à
 // estimer la place occupée par un libellé pour éviter tout chevauchement.
 const LARGEUR_GLYPHE = 0.6;
 
-/** Coupe un libellé trop long en deux lignes équilibrées (sur espace ou tiret). */
+/** Coupe un libellé trop long en deux lignes équilibrées (sur espace ou tiret,
+ *  ou en dernier recours au milieu d'un mot insécable). */
 function couperLibelle(s: string): string[] {
-  if (s.length <= 12) return [s];
+  if (s.length <= 10) return [s];
   const seps: number[] = [];
   for (let i = 0; i < s.length; i++) if (s[i] === " " || s[i] === "-") seps.push(i);
-  if (seps.length === 0) return [s];
+  if (seps.length === 0) {
+    const c = Math.ceil(s.length / 2);
+    return [s.slice(0, c) + "-", s.slice(c)];
+  }
   let best = seps[0]!;
   let bestDiff = Infinity;
   for (const i of seps) {
@@ -391,24 +395,7 @@ export function Constellation({
   isHost?: boolean;
 }) {
   const svgRef = useRef<SVGSVGElement>(null);
-  const zoneRef = useRef<HTMLDivElement>(null);
   const [exportEnCours, setExportEnCours] = useState<null | "png" | "pdf">(null);
-
-  // Ratio largeur/hauteur de la zone d'affichage : sert à orienter la
-  // constellation (plus haute que large sur mobile portrait, plus large que
-  // haute sur desktop) pour qu'elle remplisse au mieux l'espace disponible.
-  const [ratioZone, setRatioZone] = useState(1.3);
-  useEffect(() => {
-    const zone = zoneRef.current;
-    if (!zone || typeof ResizeObserver === "undefined") return;
-    const observer = new ResizeObserver(([entry]) => {
-      const { width, height } = entry!.contentRect;
-      // arrondi : évite de recalculer la géométrie à chaque pixel d'un resize.
-      if (width > 0 && height > 0) setRatioZone(Math.round((width / height) * 50) / 50);
-    });
-    observer.observe(zone);
-    return () => observer.disconnect();
-  }, []);
 
   const lancerExport = async (type: "png" | "pdf") => {
     if (!svgRef.current || exportEnCours) return;
@@ -431,18 +418,23 @@ export function Constellation({
     }
   };
 
-  const { nodes, hubs, questionIds, viewBox } = useMemo(() => {
+  const { nodes, hubs, questionIds, viewBox, ratioViewBox } = useMemo(() => {
     const votes = responses.filter((r) => r.kind === "vote");
     const questionIds = [...new Set(options.map((o) => o.question_id))].sort((a, b) => a - b);
     const N = questionIds.length;
 
+    // Aplatissement vertical de l'anneau : constante fixe (1 = anneau bien
+    // circulaire). Le viewBox garde donc toujours les mêmes proportions ; le SVG
+    // (preserveAspectRatio="xMidYMid meet" + aspect-ratio CSS) se contente
+    // ensuite de grossir/rétrécir uniformément selon la place disponible.
+    const APLATISSEMENT = 1;
     // Écartement latéral visé entre deux options voisines d'une même question.
     const ECART_PX = 130;
     // Distance radiale minimale entre le centre d'un groupe et ses options.
-    const GAP_EXTERNE = 150;
+    const GAP_EXTERNE = 118;
     // Fraction du secteur angulaire d'une question réellement utilisée par ses
     // options : le reste sert de gouttière entre deux questions voisines.
-    const GARDE = 0.72;
+    const GARDE = 0.82;
 
     // Largeur du plus grand libellé du jeu : dimensionne les rayons pour que ni
     // les pastilles ni leurs textes ne se chevauchent, quel que soit N.
@@ -462,24 +454,18 @@ export function Constellation({
 
     // viewBox serré autour du dessin (juste la place des pastilles et de leurs
     // libellés) pour que la constellation occupe un maximum de l'espace affiché.
-    const MARGE_H = 22 + maxLibelle / 2;
+    const MARGE_H = 12 + maxLibelle / 2;
     const W = RAYON_EXTERNE + MARGE_H;
-
-    // Aplatissement vertical de l'anneau : choisi pour que le viewBox épouse le
-    // ratio de la zone d'affichage. Borné pour ne jamais tasser les pastilles
-    // plus que la valeur historiquement calibrée (0,78) et ne pas trop étirer.
-    const MARGE_V = 30 + 80; // marges verticales fixes du viewBox (haut + bas)
-    const hauteurCible = (2 * W) / Math.max(0.35, ratioZone);
-    const APLATISSEMENT = Math.min(
-      1.5,
-      Math.max(0.78, (hauteurCible - MARGE_V) / (2 * RAYON_EXTERNE)),
-    );
-
-    const H_HAUT = RAYON_EXTERNE * APLATISSEMENT + 30;
-    const H_BAS = RAYON_EXTERNE * APLATISSEMENT + 80;
+    const H_HAUT = RAYON_EXTERNE * APLATISSEMENT + 28;
+    const H_BAS = RAYON_EXTERNE * APLATISSEMENT + 74;
     const CX = W;
     const CY = H_HAUT;
-    const viewBox = `0 0 ${Math.round(2 * W)} ${Math.round(H_HAUT + H_BAS)}`;
+    const largeurViewBox = Math.round(2 * W);
+    const hauteurViewBox = Math.round(H_HAUT + H_BAS);
+    const viewBox = `0 0 ${largeurViewBox} ${hauteurViewBox}`;
+    // Proportions fixes du dessin : appliquées telles quelles au <svg> (via
+    // aspect-ratio) pour qu'il grossisse sans jamais se déformer.
+    const ratioViewBox = largeurViewBox / hauteurViewBox;
 
     const position = (angle: number, rayon: number) => ({
       x: CX + Math.cos(angle) * rayon,
@@ -564,8 +550,8 @@ export function Constellation({
       });
     });
 
-    return { nodes, hubs, questionIds, viewBox };
-  }, [options, responses, ratioZone]);
+    return { nodes, hubs, questionIds, viewBox, ratioViewBox };
+  }, [options, responses]);
 
   // Deux familles de traits seulement : l'anneau qui relie les questions,
   // et un rayon court entre le centre de chaque question et ses options.
@@ -590,12 +576,13 @@ export function Constellation({
         <h1 className="text-lg font-bold sm:mt-2 sm:text-3xl">La constellation de RadioKing</h1>
       </div>
 
-      <div ref={zoneRef} className="flex min-h-0 w-full flex-1 items-center justify-center">
+      <div className="flex min-h-0 w-full flex-1 items-center justify-center">
         <svg
           ref={svgRef}
           viewBox={viewBox}
           preserveAspectRatio="xMidYMid meet"
-          className="h-full w-full"
+          style={{ aspectRatio: ratioViewBox }}
+          className="max-h-full w-full"
         >
           {anneau.map((e, i) => (
             <line
