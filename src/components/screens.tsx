@@ -1,7 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { Users, ArrowRight, Radio } from "lucide-react";
 import { Avatar } from "@/components/Avatar";
-import { MAX_PLAYERS, TOTAL_QUESTIONS, type Option, type Participant, type Question, type ResponseRow } from "@/lib/game";
+import {
+  MAX_PLAYERS,
+  TOTAL_QUESTIONS,
+  type Option,
+  type Participant,
+  type Question,
+  type ResponseRow,
+} from "@/lib/game";
 import { cn } from "@/lib/utils";
 
 /* ---------------- Join ---------------- */
@@ -67,7 +74,6 @@ export function Lobby({
   onStart: () => void;
   onLeave?: () => void;
 }) {
-
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-3xl flex-col items-center justify-center gap-8 px-6 py-16">
       <div className="text-center">
@@ -107,7 +113,6 @@ export function Lobby({
     </div>
   );
 }
-
 
 /* ---------------- Flash ---------------- */
 
@@ -164,7 +169,8 @@ export function AnswerScreen({
     <div className="mx-auto flex min-h-screen w-full max-w-2xl flex-col justify-center gap-8 px-6 py-20">
       <div>
         <p className="text-xs uppercase tracking-widest text-primary">
-          Question {question.id}/{TOTAL_QUESTIONS} · {kind === "prediction" ? "Prédiction" : "Ton vote"}
+          Question {question.id}/{TOTAL_QUESTIONS} ·{" "}
+          {kind === "prediction" ? "Prédiction" : "Ton vote"}
         </p>
         <h1 className="mt-2 text-2xl font-bold sm:text-3xl">{question.title}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -175,21 +181,49 @@ export function AnswerScreen({
       <div className="grid gap-3">
         {options.map((o) => {
           const picked = myAnswer === o.id;
+          // En phase de prédiction, on affiche qui a prédit quoi sous chaque option.
+          const pickers =
+            kind === "prediction"
+              ? (answered
+                  .filter((r) => r.option_id === o.id)
+                  .map((r) => byId.get(r.participant_id))
+                  .filter(Boolean) as Participant[])
+              : [];
           return (
             <button
               key={o.id}
               disabled={isHost}
               onClick={() => onPick(o.id)}
               className={cn(
-                "flex items-center gap-4 rounded-2xl border border-white/5 bg-surface px-5 py-4 text-left transition-all",
+                "flex flex-col gap-3 rounded-2xl border border-white/5 bg-surface px-5 py-4 text-left transition-all",
                 picked
                   ? "border-primary/60 shadow-[0_10px_24px_-14px_var(--primary)] ring-2 ring-primary"
                   : "hover:-translate-y-0.5 hover:bg-surface-strong",
                 isHost && "cursor-default opacity-70",
               )}
             >
-              <span className="text-2xl">{o.emoji}</span>
-              <span className="font-medium">{o.label}</span>
+              <span className="flex items-center gap-4">
+                <span className="text-2xl">{o.emoji}</span>
+                <span className="font-medium">{o.label}</span>
+                {kind === "prediction" && pickers.length > 0 && (
+                  <span className="ml-auto text-sm font-semibold text-primary">
+                    {pickers.length}
+                  </span>
+                )}
+              </span>
+              {kind === "prediction" && pickers.length > 0 && (
+                <span className="flex flex-wrap gap-2 border-t border-white/5 pt-3">
+                  {pickers.map((p) => (
+                    <span
+                      key={p.id}
+                      className="flex items-center gap-2 rounded-full bg-surface-strong py-1 pl-1 pr-3 text-xs"
+                    >
+                      <Avatar name={p.name} size={20} />
+                      {p.name}
+                    </span>
+                  ))}
+                </span>
+              )}
             </button>
           );
         })}
@@ -197,20 +231,9 @@ export function AnswerScreen({
 
       {kind === "prediction" ? (
         <div>
-          <p className="mb-3 text-xs uppercase tracking-widest text-muted-foreground">
+          <p className="text-xs uppercase tracking-widest text-muted-foreground">
             Déjà prédit ({answeredNames.length}/{players.length})
           </p>
-          <div className="flex flex-wrap gap-2">
-            {answeredNames.map((p) => (
-              <span
-                key={p.id}
-                className="flex items-center gap-2 rounded-full bg-surface py-1 pl-1 pr-3 text-sm"
-              >
-                <Avatar name={p.name} size={24} />
-                {p.name}
-              </span>
-            ))}
-          </div>
         </div>
       ) : (
         <div>
@@ -273,12 +296,20 @@ function RevealColumn({
       <div className="mt-4 flex h-10 items-center">
         <div className="h-3 w-full overflow-hidden rounded-full bg-surface-strong">
           <div
-            className={cn("h-full rounded-full transition-none", winner ? "btn-rk" : "bg-muted-foreground/60")}
+            className={cn(
+              "h-full rounded-full transition-none",
+              winner ? "btn-rk" : "bg-muted-foreground/60",
+            )}
             style={{ width: `${shown}%` }}
           />
         </div>
       </div>
-      <div className={cn("text-center text-4xl font-bold", winner ? "text-primary" : "text-muted-foreground")}>
+      <div
+        className={cn(
+          "text-center text-4xl font-bold",
+          winner ? "text-primary" : "text-muted-foreground",
+        )}
+      >
         {shown}%
       </div>
       <div className="mt-6 flex flex-col items-center gap-2">
@@ -312,7 +343,9 @@ export function RevealScreen({
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-3xl flex-col justify-center gap-10 px-6 py-20">
       <div className="text-center">
-        <p className="text-xs uppercase tracking-widest text-primary">Résultats · {question.title}</p>
+        <p className="text-xs uppercase tracking-widest text-primary">
+          Résultats · {question.title}
+        </p>
         <h1 className="mt-2 text-2xl font-bold">{question.prompt}</h1>
       </div>
       <div className="flex items-start gap-6">
@@ -337,6 +370,22 @@ export function RevealScreen({
 
 /* ---------------- Constellation ---------------- */
 
+// Écart minimum (en points de pourcentage) entre la 1re et la 2e option pour
+// qu'une question soit considérée comme tranchée. En dessous, elle est
+// "partagée" : aucune réponse n'est mise en avant.
+const MARGE_MAJORITE = 0.1;
+
+type NoeudConstellation = {
+  id: string;
+  emoji: string;
+  short_label: string;
+  question_id: number;
+  pct: number;
+  role: "majorite" | "minorite" | "partagee";
+  x: number;
+  y: number;
+};
+
 export function Constellation({
   options,
   responses,
@@ -344,46 +393,93 @@ export function Constellation({
   options: Option[];
   responses: ResponseRow[];
 }) {
-  const nodes = useMemo(() => {
+  const { nodes, hubs, questionIds } = useMemo(() => {
     const votes = responses.filter((r) => r.kind === "vote");
-    const n = options.length;
-    // Best count per question => that option is the majority node
-    const best = new Map<number, number>();
-    for (const o of options) {
-      const c = votes.filter((v) => v.option_id === o.id).length;
-      best.set(o.question_id, Math.max(best.get(o.question_id) ?? 0, c));
-    }
-    return options.map((o, i) => {
-      const qVotes = votes.filter((v) => v.question_id === o.question_id);
-      const mine = qVotes.filter((v) => v.option_id === o.id).length;
-      const pct = qVotes.length ? Math.round((mine / qVotes.length) * 100) : 0;
-      const angle = (i / n) * Math.PI * 2 - Math.PI / 2;
-      const radius = 240 + (i % 2 === 0 ? 0 : 55);
-      return {
-        ...o,
-        pct,
-        major: mine > 0 && mine === best.get(o.question_id),
-        x: 400 + Math.cos(angle) * radius,
-        y: 330 + Math.sin(angle) * radius * 0.72,
-      };
+    const questionIds = [...new Set(options.map((o) => o.question_id))].sort((a, b) => a - b);
+
+    const CX = 400;
+    const CY = 335;
+    const RAYON_CENTRE = 168;
+    const RAYON_EXTERNE = 288;
+    const APLATISSEMENT = 0.78;
+    // Écartement visé entre deux options voisines, en pixels : converti en
+    // angle selon le rayon, pour que les pastilles ne se chevauchent jamais.
+    const ECART_PX = 112;
+
+    const position = (angle: number, rayon: number) => ({
+      x: CX + Math.cos(angle) * rayon,
+      y: CY + Math.sin(angle) * rayon * APLATISSEMENT,
     });
+
+    const nodes: NoeudConstellation[] = [];
+    const hubs: { x: number; y: number }[] = [];
+
+    questionIds.forEach((qid, qi) => {
+      const angle = (qi / questionIds.length) * Math.PI * 2 - Math.PI / 2;
+      const hub = position(angle, RAYON_CENTRE);
+      hubs.push(hub);
+
+      const qOptions = options.filter((o) => o.question_id === qid);
+      const qVotes = votes.filter((v) => v.question_id === qid);
+      const compte = qOptions.map((o) => ({
+        option: o,
+        n: qVotes.filter((v) => v.option_id === o.id).length,
+      }));
+      const total = qVotes.length;
+      const classement = [...compte].sort((a, b) => b.n - a.n);
+      const tete = classement[0];
+      const second = classement[1];
+
+      // Question tranchée uniquement si la 1re devance nettement la 2e.
+      const ecart = total > 0 && tete && second ? (tete.n - second.n) / total : 0;
+      const tranchee = total > 0 && !!tete && tete.n > 0 && ecart >= MARGE_MAJORITE;
+
+      const pct = (n: number) => (total ? Math.round((n / total) * 100) : 0);
+      const externes = tranchee ? compte.filter((c) => c.option.id !== tete!.option.id) : compte;
+
+      if (tranchee && tete) {
+        nodes.push({
+          id: tete.option.id,
+          emoji: tete.option.emoji,
+          short_label: tete.option.short_label,
+          question_id: qid,
+          pct: pct(tete.n),
+          role: "majorite",
+          ...hub,
+        });
+      }
+
+      externes.forEach((c, k) => {
+        // Sur une question partagée, les options restent groupées à mi-distance.
+        const rayon = tranchee ? RAYON_EXTERNE : (RAYON_CENTRE + RAYON_EXTERNE) / 2;
+        const decalage = (k - (externes.length - 1) / 2) * (ECART_PX / rayon);
+        nodes.push({
+          id: c.option.id,
+          emoji: c.option.emoji,
+          short_label: c.option.short_label,
+          question_id: qid,
+          pct: pct(c.n),
+          role: tranchee ? "minorite" : "partagee",
+          ...position(angle + decalage, rayon),
+        });
+      });
+    });
+
+    return { nodes, hubs, questionIds };
   }, [options, responses]);
 
-  const edges = useMemo(() => {
-    const out: { key: string; a: (typeof nodes)[number]; b: (typeof nodes)[number]; strong: boolean }[] = [];
-    for (let i = 0; i < nodes.length; i++) {
-      for (let j = i + 1; j < nodes.length; j++) {
-        const a = nodes[i]!;
-        const b = nodes[j]!;
-        const sameQuestion = a.question_id === b.question_id;
-        const bothMajor = a.major && b.major;
-        // Majority nodes form the dense web; minority nodes only link to their own question.
-        if (!bothMajor && !sameQuestion) continue;
-        out.push({ key: `${a.id}-${b.id}`, a, b, strong: bothMajor });
-      }
-    }
-    return out;
-  }, [nodes]);
+  // Deux familles de traits seulement : l'anneau qui relie les 6 questions,
+  // et un rayon court entre le centre de chaque question et ses options.
+  const anneau = hubs.map((h, i) => ({ a: h, b: hubs[(i + 1) % hubs.length]! }));
+  const rayons = nodes
+    .filter((n) => n.role !== "majorite")
+    .map((n) => ({ n, hub: hubs[questionIds.indexOf(n.question_id)]! }));
+
+  const style = {
+    majorite: { r: 33, fill: "#FF7F50", stroke: "#FF7F50", label: "#FFFFFF", pct: "#FF7F50" },
+    partagee: { r: 22, fill: "#3a3a3a", stroke: "#6f6f6f", label: "#D8D8D8", pct: "#9a9a9a" },
+    minorite: { r: 17, fill: "#2e2e2e", stroke: "#4a4a4a", label: "#9a9a9a", pct: "#7a7a7a" },
+  } as const;
 
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-5xl flex-col items-center justify-center gap-6 px-4 py-16">
@@ -393,68 +489,71 @@ export function Constellation({
         </p>
         <h1 className="mt-2 text-3xl font-bold">La Constellation</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Les ondes majoritaires brillent en corail.
+          En corail, les choix qui font consensus. En gris, les questions qui nous divisent.
         </p>
       </div>
 
-      <svg viewBox="0 0 800 660" className="w-full">
-        {edges.map((e) => (
+      <svg viewBox="0 0 800 700" className="w-full">
+        {anneau.map((e, i) => (
           <line
-            key={e.key}
+            key={`anneau-${i}`}
             x1={e.a.x}
             y1={e.a.y}
             x2={e.b.x}
             y2={e.b.y}
-            stroke={e.strong ? "#FF7F50" : "#FFFFFF"}
-            strokeOpacity={e.strong ? 0.35 : 0.14}
-            strokeWidth={e.strong ? 1.4 : 0.8}
-            strokeDasharray={e.strong ? undefined : "4 6"}
+            stroke="#FF7F50"
+            strokeOpacity={0.22}
+            strokeWidth={1.2}
+          />
+        ))}
+        {rayons.map(({ n, hub }) => (
+          <line
+            key={`rayon-${n.id}`}
+            x1={hub.x}
+            y1={hub.y}
+            x2={n.x}
+            y2={n.y}
+            stroke="#FFFFFF"
+            strokeOpacity={0.12}
+            strokeWidth={0.8}
+            strokeDasharray="4 6"
           />
         ))}
         {nodes.map((n) => {
-          const r = n.major ? 34 : 20;
+          const st = style[n.role];
           return (
-            <g key={n.id} className="cursor-pointer">
+            <g key={n.id}>
+              {n.role === "majorite" && (
+                <circle
+                  cx={n.x}
+                  cy={n.y}
+                  r={st.r + 10}
+                  fill="#FF7F50"
+                  opacity={0.12}
+                  className="animate-pulse-ring"
+                />
+              )}
               <circle
                 cx={n.x}
                 cy={n.y}
-                r={r + 10}
-                fill={n.major ? "#FF7F50" : "#FFFFFF"}
-                opacity={n.major ? 0.12 : 0.04}
-                className={n.major ? "animate-pulse-ring" : undefined}
-              />
-              <circle
-                cx={n.x}
-                cy={n.y}
-                r={r}
-                fill={n.major ? "#FF7F50" : "#333333"}
-                stroke={n.major ? "#FF7F50" : "#5a5a5a"}
+                r={st.r}
+                fill={st.fill}
+                stroke={st.stroke}
                 strokeWidth={1.5}
               />
-              <text
-                x={n.x}
-                y={n.y + r * 0.28}
-                textAnchor="middle"
-                fontSize={r * 0.85}
-              >
+              <text x={n.x} y={n.y + st.r * 0.28} textAnchor="middle" fontSize={st.r * 0.85}>
                 {n.emoji}
               </text>
-              <text
-                x={n.x}
-                y={n.y + r + 20}
-                textAnchor="middle"
-                fontSize={13}
-                fill={n.major ? "#FFFFFF" : "#B5B5B5"}
-              >
+              <text x={n.x} y={n.y + st.r + 18} textAnchor="middle" fontSize={12} fill={st.label}>
                 {n.short_label}
               </text>
               <text
                 x={n.x}
-                y={n.y + r + 36}
+                y={n.y + st.r + 33}
                 textAnchor="middle"
-                fontSize={12}
+                fontSize={11}
                 fontWeight={700}
-                fill={n.major ? "#FF7F50" : "#8a8a8a"}
+                fill={st.pct}
               >
                 {n.pct}%
               </text>
