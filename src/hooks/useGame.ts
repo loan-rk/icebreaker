@@ -172,7 +172,9 @@ export function useGame() {
     await supabase.from("game_state").update({ paused: !state.paused }).eq("id", 1);
   }, [state]);
 
-  // Host drives the clock (2s flashes, 20s safety timer on answer screens)
+  // L'animateur pilote uniquement l'horloge du flash de transition (2 s).
+  // La phase de vote n'avance jamais toute seule : c'est le bouton « Suivant »
+  // du panneau animateur qui la fait progresser.
   const advanceRef = useRef(advance);
   advanceRef.current = advance;
   const isHost = !!me?.is_host;
@@ -183,20 +185,15 @@ export function useGame() {
     return responses.filter((r) => r.question_id === state.question_id);
   }, [responses, state]);
 
-  const everyoneAnswered =
-    players.length > 0 &&
-    state?.phase === "vote" &&
-    currentAnswers.length >= players.length;
-
   useEffect(() => {
     if (!isHost || !state || state.paused) return;
     const duration = PHASE_DURATION[state.phase];
     if (!duration) return;
     const elapsed = Date.now() - new Date(state.phase_started_at).getTime();
-    const wait = everyoneAnswered ? 600 : Math.max(0, duration - elapsed);
+    const wait = Math.max(0, duration - elapsed);
     const t = setTimeout(() => void advanceRef.current(), wait);
     return () => clearTimeout(t);
-  }, [isHost, state, everyoneAnswered]);
+  }, [isHost, state]);
 
   return {
     ready,

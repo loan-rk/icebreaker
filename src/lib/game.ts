@@ -36,11 +36,11 @@ export type GameState = {
 };
 
 export const FLASH_MS = 2000;
-export const SAFETY_MS = 20000;
 
+// Seul le flash de transition avance tout seul (2 s). La phase de vote, elle,
+// n'a pas de durée : c'est l'animateur qui la fait avancer via « Suivant ».
 export const PHASE_DURATION: Partial<Record<Phase, number>> = {
   flash_vote: FLASH_MS,
-  vote: SAFETY_MS,
 };
 
 /**
