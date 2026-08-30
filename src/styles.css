@@ -81,10 +81,34 @@
     -webkit-font-smoothing: antialiased;
   }
 
+  /* Les écrans du jeu occupent exactement le viewport visible : aucune barre de
+     défilement de page (ni verticale ni horizontale) sur mobile comme desktop. */
+  html,
+  body {
+    overflow-x: hidden;
+    overscroll-behavior-y: none;
+  }
+
+  body {
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+
   h1,
   h2,
   h3 {
     letter-spacing: -0.02em;
+  }
+}
+
+/* Repli en `vh` des utilitaires `dvh` de Tailwind (h-dvh, min-h-dvh)
+   pour les navigateurs qui ne connaissent pas l'unité `dvh`. */
+@supports not (height: 100dvh) {
+  .h-dvh {
+    height: 100vh;
+  }
+  .min-h-dvh {
+    min-height: 100vh;
   }
 }
 

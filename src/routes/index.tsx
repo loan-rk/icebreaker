@@ -24,8 +24,7 @@ export const Route = createFileRoute("/")({
       { property: "og:title", content: "Icebreaker RadioKing — Réunion mensuelle" },
       {
         property: "og:description",
-        content:
-          "Vote anonymement et révèle la constellation de l'équipe RadioKing.",
+        content: "Vote anonymement et révèle la constellation de l'équipe RadioKing.",
       },
     ],
   }),
@@ -46,7 +45,6 @@ function Index() {
     if (hostMode && g.me && !g.me.is_host) void g.becomeHost();
   }, [hostMode, g.me, g]);
 
-
   const question = useMemo(
     () => g.questions.find((q) => q.id === g.state?.question_id) ?? null,
     [g.questions, g.state],
@@ -57,7 +55,9 @@ function Index() {
   );
 
   if (!g.ready || !g.state) {
-    return <div className="flex min-h-screen items-center justify-center text-muted-foreground">…</div>;
+    return (
+      <div className="flex min-h-dvh items-center justify-center text-muted-foreground">…</div>
+    );
   }
 
   if (!g.me) {
@@ -88,7 +88,6 @@ function Index() {
         onLeave={() => void g.leave()}
       />
     );
-
   } else if (phase === "flash_vote") {
     screen = <FlashScreen text="À toi de choisir" exitAfterMs={FLASH_MS - 450} />;
   } else if (phase === "vote" && question) {
@@ -119,14 +118,10 @@ function Index() {
   }
 
   return (
-    <main className="relative min-h-screen bg-background">
+    <main className="relative flex h-dvh flex-col overflow-hidden bg-background">
       {/* Vagues sombres façon radioking.com */}
       <div className="rk-waves" aria-hidden>
-        <svg
-          viewBox="0 0 1440 900"
-          preserveAspectRatio="none"
-          className="h-full w-full opacity-70"
-        >
+        <svg viewBox="0 0 1440 900" preserveAspectRatio="none" className="h-full w-full opacity-70">
           <path
             d="M0,0 H520 C430,220 700,330 610,540 C540,720 690,820 760,900 H0 Z"
             fill="#ffffff"
@@ -139,7 +134,7 @@ function Index() {
           />
         </svg>
       </div>
-      <div className="relative z-10">{screen}</div>
+      <div className="relative z-10 flex min-h-0 flex-1 flex-col">{screen}</div>
       {isHost && (
         <HostPanel
           phase={phase}

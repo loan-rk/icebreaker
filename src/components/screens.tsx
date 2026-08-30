@@ -1,13 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Users, ArrowRight, Radio } from "lucide-react";
 import { Avatar } from "@/components/Avatar";
-import {
-  MAX_PLAYERS,
-  type Option,
-  type Participant,
-  type Question,
-  type ResponseRow,
-} from "@/lib/game";
+import { type Option, type Participant, type Question, type ResponseRow } from "@/lib/game";
 import { cn } from "@/lib/utils";
 
 /* ---------------- Join ---------------- */
@@ -23,7 +17,7 @@ export function JoinScreen({
 }) {
   const [name, setName] = useState("");
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center px-6">
+    <div className="flex min-h-dvh flex-col items-center justify-center px-6 py-8">
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -74,41 +68,44 @@ export function Lobby({
   onLeave?: () => void;
 }) {
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-3xl flex-col items-center justify-center gap-8 px-6 py-16">
-      <div className="text-center">
-        <p className="text-xl font-medium">En attente du lancement...</p>
-        <p className="mt-2 flex items-center justify-center gap-2 text-sm text-muted-foreground">
-          <Users className="h-4 w-4" />
-          {players.length}/{MAX_PLAYERS} participants connectés
-        </p>
+    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+      <div className="mx-auto flex min-h-full w-full max-w-3xl flex-col items-center justify-center gap-6 px-6 py-8 sm:gap-8 sm:py-16">
+        <div className="text-center">
+          <p className="text-xl font-medium">En attente du lancement...</p>
+          <p className="mt-2 flex items-center justify-center gap-2 text-sm text-muted-foreground">
+            <Users className="h-4 w-4" />
+            {players.length} participant{players.length > 1 ? "s" : ""} connecté
+            {players.length > 1 ? "s" : ""}
+          </p>
+        </div>
+
+        <div className="grid w-full grid-cols-3 gap-3 sm:grid-cols-5 sm:gap-4">
+          {players.map((p) => (
+            <div key={p.id} className="flex flex-col items-center gap-2">
+              <Avatar name={p.name} size={48} />
+              <span className="max-w-full truncate text-xs text-muted-foreground">{p.name}</span>
+            </div>
+          ))}
+        </div>
+
+        {isHost && (
+          <button
+            onClick={onStart}
+            className="btn-rk btn-rk-hover flex items-center gap-2 px-6 py-3 font-semibold"
+          >
+            Démarrer le jeu <ArrowRight className="h-4 w-4" />
+          </button>
+        )}
+
+        {onLeave && (
+          <button
+            onClick={onLeave}
+            className="text-xs text-muted-foreground/60 underline-offset-4 hover:text-foreground hover:underline"
+          >
+            Quitter
+          </button>
+        )}
       </div>
-
-      <div className="grid w-full grid-cols-3 gap-4 sm:grid-cols-5">
-        {players.map((p) => (
-          <div key={p.id} className="flex flex-col items-center gap-2">
-            <Avatar name={p.name} size={56} />
-            <span className="max-w-full truncate text-xs text-muted-foreground">{p.name}</span>
-          </div>
-        ))}
-      </div>
-
-      {isHost && (
-        <button
-          onClick={onStart}
-          className="btn-rk btn-rk-hover flex items-center gap-2 px-6 py-3 font-semibold"
-        >
-          Démarrer le jeu <ArrowRight className="h-4 w-4" />
-        </button>
-      )}
-
-      {onLeave && (
-        <button
-          onClick={onLeave}
-          className="text-xs text-muted-foreground/60 underline-offset-4 hover:text-foreground hover:underline"
-        >
-          Quitter
-        </button>
-      )}
     </div>
   );
 }
@@ -125,7 +122,7 @@ export function FlashScreen({ text, exitAfterMs }: { text: string; exitAfterMs?:
   }, [text, exitAfterMs]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center overflow-hidden px-8">
+    <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden px-8">
       <p
         className={cn(
           "max-w-3xl text-center text-3xl font-extrabold leading-tight tracking-tight sm:text-5xl",
@@ -162,53 +159,55 @@ export function AnswerScreen({
   isHost: boolean;
 }) {
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-2xl flex-col justify-center gap-8 px-6 py-20">
-      <div>
-        <p className="text-xs uppercase tracking-widest text-primary">
-          Question {questionPosition}/{questionCount} · Ton vote
-        </p>
-        <h1 className="mt-2 text-2xl font-bold sm:text-3xl">{question.title}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">{question.prompt}</p>
-      </div>
+    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+      <div className="mx-auto flex min-h-full w-full max-w-2xl flex-col justify-center gap-6 px-6 py-10 sm:gap-8 sm:py-20">
+        <div>
+          <p className="text-xs uppercase tracking-widest text-primary">
+            Question {questionPosition}/{questionCount} · Ton vote
+          </p>
+          <h1 className="mt-2 text-2xl font-bold sm:text-3xl">{question.title}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">{question.prompt}</p>
+        </div>
 
-      <div className="grid gap-3">
-        {options.map((o) => {
-          const picked = myAnswer === o.id;
-          return (
-            <button
-              key={o.id}
-              disabled={isHost}
-              onClick={() => onPick(o.id)}
-              className={cn(
-                "flex flex-col gap-3 rounded-2xl border border-white/5 bg-surface px-5 py-4 text-left transition-all",
-                picked
-                  ? "border-primary/60 shadow-[0_10px_24px_-14px_var(--primary)] ring-2 ring-primary"
-                  : "hover:-translate-y-0.5 hover:bg-surface-strong",
-                isHost && "cursor-default opacity-70",
-              )}
-            >
-              <span className="flex items-center gap-4">
-                <span className="text-2xl">{o.emoji}</span>
-                <span className="font-medium">{o.label}</span>
-              </span>
-            </button>
-          );
-        })}
-      </div>
+        <div className="grid gap-3">
+          {options.map((o) => {
+            const picked = myAnswer === o.id;
+            return (
+              <button
+                key={o.id}
+                disabled={isHost}
+                onClick={() => onPick(o.id)}
+                className={cn(
+                  "flex flex-col gap-3 rounded-2xl border border-white/5 bg-surface px-5 py-4 text-left transition-all",
+                  picked
+                    ? "border-primary/60 shadow-[0_10px_24px_-14px_var(--primary)] ring-2 ring-primary"
+                    : "hover:-translate-y-0.5 hover:bg-surface-strong",
+                  isHost && "cursor-default opacity-70",
+                )}
+              >
+                <span className="flex items-center gap-4">
+                  <span className="text-2xl">{o.emoji}</span>
+                  <span className="font-medium">{o.label}</span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
 
-      <div>
-        <p className="mb-3 text-xs uppercase tracking-widest text-muted-foreground">
-          Vote anonyme · {answered.length}/{players.length} ont voté
-        </p>
-        <div className="flex flex-wrap gap-2">
-          {players.map((p) => (
-            <Avatar
-              key={p.id}
-              name={p.name}
-              size={32}
-              done={answered.some((r) => r.participant_id === p.id)}
-            />
-          ))}
+        <div>
+          <p className="mb-3 text-xs uppercase tracking-widest text-muted-foreground">
+            Vote anonyme · {answered.length}/{players.length} ont voté
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {players.map((p) => (
+              <Avatar
+                key={p.id}
+                name={p.name}
+                size={32}
+                done={answered.some((r) => r.participant_id === p.id)}
+              />
+            ))}
+          </div>
         </div>
       </div>
     </div>
@@ -248,11 +247,11 @@ function RevealColumn({
   const shown = useCountUp(percent);
   return (
     <div className="flex flex-1 flex-col">
-      <div className="flex h-24 flex-col items-center justify-end gap-1 text-center">
-        <span className="text-3xl">{option.emoji}</span>
-        <span className="text-sm text-muted-foreground">{option.label}</span>
+      <div className="flex h-20 flex-col items-center justify-end gap-1 text-center sm:h-24">
+        <span className="text-2xl sm:text-3xl">{option.emoji}</span>
+        <span className="text-xs text-muted-foreground sm:text-sm">{option.label}</span>
       </div>
-      <div className="mt-4 flex h-10 items-center">
+      <div className="mt-3 flex h-8 items-center sm:mt-4 sm:h-10">
         <div className="h-3 w-full overflow-hidden rounded-full bg-surface-strong">
           <div
             className={cn(
@@ -265,17 +264,17 @@ function RevealColumn({
       </div>
       <div
         className={cn(
-          "text-center text-4xl font-bold",
+          "text-center text-3xl font-bold sm:text-4xl",
           winner ? "text-primary" : "text-muted-foreground",
         )}
       >
         {shown}%
       </div>
-      <div className="mt-6 flex flex-col items-center gap-2">
+      <div className="mt-4 flex flex-col items-center gap-1.5 sm:mt-6 sm:gap-2">
         {voters.map((v) => (
-          <div key={v.id} className="flex items-center gap-2 text-sm">
-            <Avatar name={v.name} size={26} />
-            <span className="text-muted-foreground">{v.name}</span>
+          <div key={v.id} className="flex items-center gap-2 text-xs sm:text-sm">
+            <Avatar name={v.name} size={22} />
+            <span className="max-w-[6rem] truncate text-muted-foreground">{v.name}</span>
           </div>
         ))}
       </div>
@@ -300,28 +299,30 @@ export function RevealScreen({
   const max = Math.max(...counts, 0);
 
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-3xl flex-col justify-center gap-10 px-6 py-20">
-      <div className="text-center">
-        <p className="text-xs uppercase tracking-widest text-primary">
-          Résultats · {question.title}
-        </p>
-        <h1 className="mt-2 text-2xl font-bold">{question.prompt}</h1>
-      </div>
-      <div className="flex items-start gap-6">
-        {options.map((o, i) => (
-          <RevealColumn
-            key={o.id}
-            option={o}
-            percent={Math.round(((counts[i] ?? 0) / total) * 100)}
-            winner={(counts[i] ?? 0) === max && max > 0}
-            voters={
-              votes
-                .filter((v) => v.option_id === o.id)
-                .map((v) => byId.get(v.participant_id))
-                .filter(Boolean) as Participant[]
-            }
-          />
-        ))}
+    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+      <div className="mx-auto flex min-h-full w-full max-w-3xl flex-col justify-center gap-6 px-6 py-10 sm:gap-10 sm:py-20">
+        <div className="text-center">
+          <p className="text-xs uppercase tracking-widest text-primary">
+            Résultats · {question.title}
+          </p>
+          <h1 className="mt-2 text-2xl font-bold">{question.prompt}</h1>
+        </div>
+        <div className="flex items-start gap-4 sm:gap-6">
+          {options.map((o, i) => (
+            <RevealColumn
+              key={o.id}
+              option={o}
+              percent={Math.round(((counts[i] ?? 0) / total) * 100)}
+              winner={(counts[i] ?? 0) === max && max > 0}
+              voters={
+                votes
+                  .filter((v) => v.option_id === o.id)
+                  .map((v) => byId.get(v.participant_id))
+                  .filter(Boolean) as Participant[]
+              }
+            />
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -361,9 +362,7 @@ function couperLibelle(s: string): string[] {
 }
 
 function largeurLibelle(s: string): number {
-  return Math.max(
-    ...couperLibelle(s).map((l) => l.length * LABEL_FONT * LARGEUR_GLYPHE + 10),
-  );
+  return Math.max(...couperLibelle(s).map((l) => l.length * LABEL_FONT * LARGEUR_GLYPHE + 10));
 }
 
 type NoeudConstellation = {
@@ -400,18 +399,13 @@ export function Constellation({
 
     // Largeur du plus grand libellé du jeu : dimensionne les rayons pour que ni
     // les pastilles ni leurs textes ne se chevauchent, quel que soit N.
-    const maxLibelle = Math.max(
-      44,
-      ...options.map((o) => largeurLibelle(o.short_label)),
-    );
+    const maxLibelle = Math.max(44, ...options.map((o) => largeurLibelle(o.short_label)));
 
     const SECTEUR = N > 0 ? (2 * Math.PI) / N : 2 * Math.PI;
     // Rayon de l'anneau des questions : croît avec N (corde constante entre
     // groupes voisins) et avec la largeur des libellés.
     const RAYON_CENTRE =
-      N > 1
-        ? Math.max(168, maxLibelle / (SECTEUR * 0.85), 80 / Math.sin(Math.PI / N))
-        : 0;
+      N > 1 ? Math.max(168, maxLibelle / (SECTEUR * 0.85), 80 / Math.sin(Math.PI / N)) : 0;
     // Rayon des options : assez grand pour poser côte à côte les deux options
     // d'une question partagée sans que leurs libellés se touchent.
     const RAYON_EXTERNE = Math.max(
@@ -476,10 +470,7 @@ export function Constellation({
       // de l'éventail est borné par la gouttière du secteur pour ne jamais
       // empiéter sur la question voisine.
       const m = externes.length;
-      const eventail = Math.min(
-        (m <= 1 ? 0 : m - 1) * (ECART_PX / RAYON_EXTERNE),
-        SECTEUR * GARDE,
-      );
+      const eventail = Math.min((m <= 1 ? 0 : m - 1) * (ECART_PX / RAYON_EXTERNE), SECTEUR * GARDE);
       externes.forEach((c, k) => {
         const decalage = m <= 1 ? 0 : ((k - (m - 1) / 2) / (m - 1)) * eventail;
         nodes.push({
@@ -511,95 +502,97 @@ export function Constellation({
   } as const;
 
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-5xl flex-col items-center justify-center gap-6 px-4 py-16">
-      <div className="text-center">
-        <p className="flex items-center justify-center gap-2 text-xs uppercase tracking-widest text-primary">
-          <Radio className="h-4 w-4" /> Portrait-robot RadioKing
-        </p>
-        <h1 className="mt-2 text-3xl font-bold">La Constellation</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          En corail, les choix qui font consensus. En gris, les questions qui nous divisent.
-        </p>
-      </div>
+    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+      <div className="mx-auto flex min-h-full w-full max-w-5xl flex-col items-center justify-center gap-4 px-4 py-8 sm:gap-6 sm:py-16">
+        <div className="text-center">
+          <p className="flex items-center justify-center gap-2 text-xs uppercase tracking-widest text-primary">
+            <Radio className="h-4 w-4" /> Portrait-robot RadioKing
+          </p>
+          <h1 className="mt-2 text-2xl font-bold sm:text-3xl">La Constellation</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            En corail, les choix qui font consensus. En gris, les questions qui nous divisent.
+          </p>
+        </div>
 
-      <svg viewBox={viewBox} className="w-full">
-        {anneau.map((e, i) => (
-          <line
-            key={`anneau-${i}`}
-            x1={e.a.x}
-            y1={e.a.y}
-            x2={e.b.x}
-            y2={e.b.y}
-            stroke="#FF7F50"
-            strokeOpacity={0.22}
-            strokeWidth={1.2}
-          />
-        ))}
-        {rayons.map(({ n, hub }) => (
-          <line
-            key={`rayon-${n.id}`}
-            x1={hub.x}
-            y1={hub.y}
-            x2={n.x}
-            y2={n.y}
-            stroke="#FFFFFF"
-            strokeOpacity={0.12}
-            strokeWidth={0.8}
-            strokeDasharray="4 6"
-          />
-        ))}
-        {nodes.map((n) => {
-          const st = style[n.role];
-          return (
-            <g key={n.id}>
-              {n.role === "majorite" && (
+        <svg viewBox={viewBox} className="w-full max-w-3xl">
+          {anneau.map((e, i) => (
+            <line
+              key={`anneau-${i}`}
+              x1={e.a.x}
+              y1={e.a.y}
+              x2={e.b.x}
+              y2={e.b.y}
+              stroke="#FF7F50"
+              strokeOpacity={0.22}
+              strokeWidth={1.2}
+            />
+          ))}
+          {rayons.map(({ n, hub }) => (
+            <line
+              key={`rayon-${n.id}`}
+              x1={hub.x}
+              y1={hub.y}
+              x2={n.x}
+              y2={n.y}
+              stroke="#FFFFFF"
+              strokeOpacity={0.12}
+              strokeWidth={0.8}
+              strokeDasharray="4 6"
+            />
+          ))}
+          {nodes.map((n) => {
+            const st = style[n.role];
+            return (
+              <g key={n.id}>
+                {n.role === "majorite" && (
+                  <circle
+                    cx={n.x}
+                    cy={n.y}
+                    r={st.r + 5}
+                    fill="#FF7F50"
+                    opacity={0.1}
+                    className="animate-pulse-ring"
+                  />
+                )}
                 <circle
                   cx={n.x}
                   cy={n.y}
-                  r={st.r + 5}
-                  fill="#FF7F50"
-                  opacity={0.1}
-                  className="animate-pulse-ring"
+                  r={st.r}
+                  fill={st.fill}
+                  stroke={st.stroke}
+                  strokeWidth={1.5}
                 />
-              )}
-              <circle
-                cx={n.x}
-                cy={n.y}
-                r={st.r}
-                fill={st.fill}
-                stroke={st.stroke}
-                strokeWidth={1.5}
-              />
-              <text x={n.x} y={n.y + st.r * 0.28} textAnchor="middle" fontSize={st.r * 0.85}>
-                {n.emoji}
-              </text>
-              <text
-                x={n.x}
-                y={n.y + st.r + 13}
-                textAnchor="middle"
-                fontSize={LABEL_FONT}
-                fill={st.label}
-              >
-                {n.lignes.map((ligne, i) => (
-                  <tspan key={i} x={n.x} dy={i === 0 ? 0 : LABEL_FONT + 2}>
-                    {ligne}
-                  </tspan>
-                ))}
-              </text>
-              <text
-                x={n.x}
-                y={n.y + st.r + 15 + n.lignes.length * (LABEL_FONT + 2)}
-                textAnchor="middle"
-                fontSize={PCT_FONT}
-                fontWeight={700}
-                fill={st.pct}
-              >
-                {n.pct}%
-              </text>
-            </g>
-          );
-        })}
-      </svg>
+                <text x={n.x} y={n.y + st.r * 0.28} textAnchor="middle" fontSize={st.r * 0.85}>
+                  {n.emoji}
+                </text>
+                <text
+                  x={n.x}
+                  y={n.y + st.r + 13}
+                  textAnchor="middle"
+                  fontSize={LABEL_FONT}
+                  fill={st.label}
+                >
+                  {n.lignes.map((ligne, i) => (
+                    <tspan key={i} x={n.x} dy={i === 0 ? 0 : LABEL_FONT + 2}>
+                      {ligne}
+                    </tspan>
+                  ))}
+                </text>
+                <text
+                  x={n.x}
+                  y={n.y + st.r + 15 + n.lignes.length * (LABEL_FONT + 2)}
+                  textAnchor="middle"
+                  fontSize={PCT_FONT}
+                  fontWeight={700}
+                  fill={st.pct}
+                >
+                  {n.pct}%
+                </text>
+              </g>
+            );
+          })}
+        </svg>
+      </div>
     </div>
   );
 }
