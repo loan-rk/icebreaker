@@ -72,12 +72,28 @@ export function useGame() {
   }, [refresh]);
 
   // If the host wiped the players, drop the local identity so the join screen returns.
+  // Re-check the participant directly before clearing it: the realtime participant
+  // list can briefly be stale immediately after a successful join.
   useEffect(() => {
     if (!ready || !me || participants.length === 0) return;
-    if (!participants.some((p) => p.id === me.id)) {
+    if (participants.some((p) => p.id === me.id)) return;
+
+    let alive = true;
+    void (async () => {
+      const { data, error } = await supabase
+        .from("participants")
+        .select("id")
+        .eq("id", me.id)
+        .maybeSingle();
+
+      if (!alive || error || data) return;
       localStorage.removeItem(STORAGE_KEY);
       setMe(null);
-    }
+    })();
+
+    return () => {
+      alive = false;
+    };
   }, [ready, me, participants]);
 
   const join = useCallback(async (name: string, isHost: boolean) => {
