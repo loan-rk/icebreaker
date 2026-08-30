@@ -35,6 +35,9 @@ export const Route = createFileRoute("/")({
 function Index() {
   const g = useGame();
   const [hostMode, setHostMode] = useState(false);
+  // Passe à vrai au clic « Rejoindre » : ce geste débloque l'audio du
+  // navigateur, on en profite pour ouvrir le lecteur radio au montage.
+  const [radioAuDemarrage, setRadioAuDemarrage] = useState(false);
 
   useEffect(() => {
     const p = new URLSearchParams(window.location.search);
@@ -66,7 +69,10 @@ function Index() {
       <JoinScreen
         hostMode={hostMode}
         onToggleHost={() => setHostMode((v) => !v)}
-        onJoin={(name) => void g.join(name, hostMode)}
+        onJoin={(name) => {
+          setRadioAuDemarrage(true);
+          void g.join(name, hostMode);
+        }}
       />
     );
   }
@@ -148,7 +154,7 @@ function Index() {
       {/* Lecteur radio persistant : monté ici (hors des écrans de phase), il
           survit à tous les changements d'écran et joue en continu du lobby
           jusqu'à la constellation. Replié pendant le vote pour ne rien masquer. */}
-      <RadioKingPlayer collapsed={phase === "vote"} />
+      <RadioKingPlayer collapsed={phase === "vote"} ouvrirAuDemarrage={radioAuDemarrage} />
 
       {isHost && (
         <HostPanel

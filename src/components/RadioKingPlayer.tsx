@@ -23,9 +23,20 @@ const HELPER_SRC = "https://player.radioking.io/scripts/iframe.bundle.js";
  * L'iframe reste montée même repliée : la musique ne s'interrompt pas. Replié,
  * il ne recouvre ni les boutons de vote ni le panneau animateur ; il se replie
  * d'ailleurs tout seul quand `collapsed` passe à vrai (phase de vote).
+ *
+ * `ouvrirAuDemarrage` : ouvre le volet dès le montage. Sert à profiter du clic
+ * « Rejoindre » (qui débloque l'audio dans le navigateur pour la session) pour
+ * lancer la lecture sans geste supplémentaire. Si le navigateur refuse quand
+ * même, aucun message : le bouton « Radio » reste le recours manuel.
  */
-export function RadioKingPlayer({ collapsed = false }: { collapsed?: boolean }) {
-  const [ouvert, setOuvert] = useState(false);
+export function RadioKingPlayer({
+  collapsed = false,
+  ouvrirAuDemarrage = false,
+}: {
+  collapsed?: boolean;
+  ouvrirAuDemarrage?: boolean;
+}) {
+  const [ouvert, setOuvert] = useState(ouvrirAuDemarrage);
 
   useEffect(() => {
     if (collapsed) setOuvert(false);
@@ -64,6 +75,9 @@ export function RadioKingPlayer({ collapsed = false }: { collapsed?: boolean }) 
           title="Lecteur radio RadioKing — Avocado Radio"
           loading="lazy"
           scrolling="no"
+          // Autorise le lecteur à démarrer seul si le navigateur a débloqué
+          // l'audio (après le clic « Rejoindre »).
+          allow="autoplay"
           className="h-[145px] w-full border-0"
         />
       </div>
