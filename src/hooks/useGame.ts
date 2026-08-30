@@ -20,6 +20,8 @@ export function useGame() {
   const [state, setState] = useState<GameState | null>(null);
   const [me, setMe] = useState<Participant | null>(null);
   const [ready, setReady] = useState(false);
+  const meIdRef = useRef<string | null>(null);
+  meIdRef.current = me?.id ?? null;
 
   const refresh = useCallback(async () => {
     const [q, o, p, r, g] = await Promise.all([
@@ -62,7 +64,18 @@ export function useGame() {
   useEffect(() => {
     const channel = supabase
       .channel("icebreaker")
-      .on("postgres_changes", { event: "*", schema: "public", table: "participants" }, refresh)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "participants" },
+        (payload) => {
+          const deletedId = payload.eventType === "DELETE" ? (payload.old as { id?: string }).id : undefined;
+          if (deletedId && deletedId === meIdRef.current) {
+            localStorage.removeItem(STORAGE_KEY);
+            setMe(null);
+          }
+          void refresh();
+        },
+      )
       .on("postgres_changes", { event: "*", schema: "public", table: "responses" }, refresh)
       .on("postgres_changes", { event: "*", schema: "public", table: "game_state" }, refresh)
       .subscribe();
@@ -70,31 +83,6 @@ export function useGame() {
       void supabase.removeChannel(channel);
     };
   }, [refresh]);
-
-  // If the host wiped the players, drop the local identity so the join screen returns.
-  // Re-check the participant directly before clearing it: the realtime participant
-  // list can briefly be stale immediately after a successful join.
-  useEffect(() => {
-    if (!ready || !me || participants.length === 0) return;
-    if (participants.some((p) => p.id === me.id)) return;
-
-    let alive = true;
-    void (async () => {
-      const { data, error } = await supabase
-        .from("participants")
-        .select("id")
-        .eq("id", me.id)
-        .maybeSingle();
-
-      if (!alive || error || data) return;
-      localStorage.removeItem(STORAGE_KEY);
-      setMe(null);
-    })();
-
-    return () => {
-      alive = false;
-    };
-  }, [ready, me, participants]);
 
   const join = useCallback(async (name: string, isHost: boolean) => {
     const { data, error } = await supabase
@@ -104,8 +92,12 @@ export function useGame() {
       .single();
     if (error || !data) throw error;
     localStorage.setItem(STORAGE_KEY, data.id);
-    setMe(data as Participant);
-    return data as Participant;
+    const participant = data as Participant;
+    setMe(participant);
+    setParticipants((current) =>
+      current.some((item) => item.id === participant.id) ? current : [...current, participant],
+    );
+    return participant;
   }, []);
 
   const leave = useCallback(async () => {
