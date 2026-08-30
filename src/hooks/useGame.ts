@@ -23,6 +23,10 @@ export function useGame() {
   const meIdRef = useRef<string | null>(null);
   meIdRef.current = me?.id ?? null;
 
+  // Liste ordonnée des identifiants de questions chargées (requête order("id")).
+  // Les identifiants peuvent être non contigus : on raisonne toujours en position.
+  const questionIds = useMemo(() => questions.map((q) => q.id), [questions]);
+
   const refresh = useCallback(async () => {
     const [q, o, p, r, g] = await Promise.all([
       supabase.from("questions").select("*").order("id"),
@@ -146,22 +150,22 @@ export function useGame() {
 
   const advance = useCallback(async () => {
     if (!state) return;
-    const n = nextPhase(state.phase, state.question_id);
+    const n = nextPhase(state.phase, state.question_id, questionIds);
     await setGame(n);
-  }, [state, setGame]);
+  }, [state, setGame, questionIds]);
 
   const restart = useCallback(async () => {
     await supabase.from("responses").delete().neq("question_id", -1);
-    await setGame({ phase: "lobby", question_id: 1, paused: false });
-  }, [setGame]);
+    await setGame({ phase: "lobby", question_id: questionIds[0] ?? 1, paused: false });
+  }, [setGame, questionIds]);
 
   /** Full reset: wipes responses AND every participant (hosts kept). */
   const resetAll = useCallback(async () => {
     await supabase.from("responses").delete().neq("question_id", -1);
     await supabase.from("participants").delete().eq("is_host", false);
-    await setGame({ phase: "lobby", question_id: 1, paused: false });
+    await setGame({ phase: "lobby", question_id: questionIds[0] ?? 1, paused: false });
     await refresh();
-  }, [setGame, refresh]);
+  }, [setGame, refresh, questionIds]);
 
   const togglePause = useCallback(async () => {
     if (!state) return;
@@ -199,6 +203,7 @@ export function useGame() {
     me,
     state,
     questions,
+    questionIds,
     options,
     participants,
     players,

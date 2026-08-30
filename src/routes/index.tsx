@@ -74,6 +74,10 @@ function Index() {
   const phase = g.state.phase;
   const myVote = g.currentAnswers.find((r) => r.participant_id === g.me?.id);
 
+  // Position de la question courante dans la liste chargée (0 si absente) et total réel.
+  const questionCount = g.questionIds.length;
+  const questionPosition = g.questionIds.indexOf(g.state.question_id) + 1;
+
   let screen: React.ReactNode = null;
   if (phase === "lobby") {
     screen = (
@@ -91,6 +95,8 @@ function Index() {
     screen = (
       <AnswerScreen
         question={question}
+        questionPosition={questionPosition}
+        questionCount={questionCount}
         options={options}
         {...(myVote?.option_id ? { myAnswer: myVote.option_id } : {})}
         onPick={(id) => void g.submit(id)}
@@ -137,7 +143,8 @@ function Index() {
       {isHost && (
         <HostPanel
           phase={phase}
-          questionId={g.state.question_id}
+          questionPosition={questionPosition}
+          questionCount={questionCount}
           paused={g.state.paused}
           onNext={() => void g.advance()}
           onTogglePause={() => void g.togglePause()}

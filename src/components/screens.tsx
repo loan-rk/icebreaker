@@ -3,7 +3,6 @@ import { Users, ArrowRight, Radio } from "lucide-react";
 import { Avatar } from "@/components/Avatar";
 import {
   MAX_PLAYERS,
-  TOTAL_QUESTIONS,
   type Option,
   type Participant,
   type Question,
@@ -143,6 +142,8 @@ export function FlashScreen({ text, exitAfterMs }: { text: string; exitAfterMs?:
 
 export function AnswerScreen({
   question,
+  questionPosition,
+  questionCount,
   options,
   myAnswer,
   onPick,
@@ -151,6 +152,8 @@ export function AnswerScreen({
   isHost,
 }: {
   question: Question;
+  questionPosition: number;
+  questionCount: number;
   options: Option[];
   myAnswer?: string;
   onPick: (id: string) => void;
@@ -162,7 +165,7 @@ export function AnswerScreen({
     <div className="mx-auto flex min-h-screen w-full max-w-2xl flex-col justify-center gap-8 px-6 py-20">
       <div>
         <p className="text-xs uppercase tracking-widest text-primary">
-          Question {question.id}/{TOTAL_QUESTIONS} · Ton vote
+          Question {questionPosition}/{questionCount} · Ton vote
         </p>
         <h1 className="mt-2 text-2xl font-bold sm:text-3xl">{question.title}</h1>
         <p className="mt-1 text-sm text-muted-foreground">{question.prompt}</p>
