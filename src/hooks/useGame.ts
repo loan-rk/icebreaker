@@ -121,13 +121,13 @@ export function useGame() {
 
 
   const submit = useCallback(
-    async (kind: "prediction" | "vote", optionId: string) => {
+    async (optionId: string) => {
       if (!me || !state) return;
       await supabase.from("responses").upsert(
         {
           participant_id: me.id,
           question_id: state.question_id,
-          kind,
+          kind: "vote",
           option_id: optionId,
         },
         { onConflict: "participant_id,question_id,kind" },
@@ -174,19 +174,15 @@ export function useGame() {
   const isHost = !!me?.is_host;
   const players = useMemo(() => participants.filter((p) => !p.is_host), [participants]);
 
-  const currentAnswers = useMemo(() => {
-    if (!state) return { prediction: [] as ResponseRow[], vote: [] as ResponseRow[] };
-    const forQ = responses.filter((r) => r.question_id === state.question_id);
-    return {
-      prediction: forQ.filter((r) => r.kind === "prediction"),
-      vote: forQ.filter((r) => r.kind === "vote"),
-    };
+  const currentAnswers = useMemo<ResponseRow[]>(() => {
+    if (!state) return [];
+    return responses.filter((r) => r.question_id === state.question_id);
   }, [responses, state]);
 
   const everyoneAnswered =
     players.length > 0 &&
-    ((state?.phase === "predict" && currentAnswers.prediction.length >= players.length) ||
-      (state?.phase === "vote" && currentAnswers.vote.length >= players.length));
+    state?.phase === "vote" &&
+    currentAnswers.length >= players.length;
 
   useEffect(() => {
     if (!isHost || !state || state.paused) return;

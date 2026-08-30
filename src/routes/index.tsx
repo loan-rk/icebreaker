@@ -19,13 +19,13 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "Jeu d'icebreaker temps réel pour la réunion mensuelle RadioKing : prédis, vote et découvre le portrait-robot de l'équipe.",
+          "Jeu d'icebreaker temps réel pour la réunion mensuelle RadioKing : vote et découvre le portrait-robot de l'équipe.",
       },
       { property: "og:title", content: "Icebreaker RadioKing — Réunion mensuelle" },
       {
         property: "og:description",
         content:
-          "Prédis les choix de la majorité, vote anonymement et révèle la constellation de l'équipe RadioKing.",
+          "Vote anonymement et révèle la constellation de l'équipe RadioKing.",
       },
     ],
   }),
@@ -72,8 +72,7 @@ function Index() {
 
   const isHost = g.me.is_host;
   const phase = g.state.phase;
-  const myPrediction = g.currentAnswers.prediction.find((r) => r.participant_id === g.me?.id);
-  const myVote = g.currentAnswers.vote.find((r) => r.participant_id === g.me?.id);
+  const myVote = g.currentAnswers.find((r) => r.participant_id === g.me?.id);
 
   let screen: React.ReactNode = null;
   if (phase === "lobby") {
@@ -86,24 +85,16 @@ function Index() {
       />
     );
 
-  } else if (phase === "flash_predict") {
-    screen = (
-      <FlashScreen text="À toi de deviner ce que la majorité va choisir" exitAfterMs={FLASH_MS - 450} />
-    );
   } else if (phase === "flash_vote") {
     screen = <FlashScreen text="À toi de choisir" exitAfterMs={FLASH_MS - 450} />;
-  } else if ((phase === "predict" || phase === "vote") && question) {
-    const kind = phase === "predict" ? "prediction" : "vote";
+  } else if (phase === "vote" && question) {
     screen = (
       <AnswerScreen
         question={question}
         options={options}
-        kind={kind}
-        {...((kind === "prediction" ? myPrediction?.option_id : myVote?.option_id)
-          ? { myAnswer: (kind === "prediction" ? myPrediction : myVote)!.option_id }
-          : {})}
-        onPick={(id) => void g.submit(kind, id)}
-        answered={kind === "prediction" ? g.currentAnswers.prediction : g.currentAnswers.vote}
+        {...(myVote?.option_id ? { myAnswer: myVote.option_id } : {})}
+        onPick={(id) => void g.submit(id)}
+        answered={g.currentAnswers}
         players={g.players}
         isHost={isHost}
       />
@@ -113,7 +104,7 @@ function Index() {
       <RevealScreen
         question={question}
         options={options}
-        votes={g.currentAnswers.vote}
+        votes={g.currentAnswers}
         players={g.players}
       />
     );

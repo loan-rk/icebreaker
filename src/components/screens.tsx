@@ -139,12 +139,11 @@ export function FlashScreen({ text, exitAfterMs }: { text: string; exitAfterMs?:
   );
 }
 
-/* ---------------- Answer (prediction / vote) ---------------- */
+/* ---------------- Answer (vote) ---------------- */
 
 export function AnswerScreen({
   question,
   options,
-  kind,
   myAnswer,
   onPick,
   answered,
@@ -153,42 +152,25 @@ export function AnswerScreen({
 }: {
   question: Question;
   options: Option[];
-  kind: "prediction" | "vote";
   myAnswer?: string;
   onPick: (id: string) => void;
   answered: ResponseRow[];
   players: Participant[];
   isHost: boolean;
 }) {
-  const byId = useMemo(() => new Map(players.map((p) => [p.id, p])), [players]);
-  const answeredNames = answered
-    .map((r) => byId.get(r.participant_id))
-    .filter(Boolean) as Participant[];
-
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-2xl flex-col justify-center gap-8 px-6 py-20">
       <div>
         <p className="text-xs uppercase tracking-widest text-primary">
-          Question {question.id}/{TOTAL_QUESTIONS} ·{" "}
-          {kind === "prediction" ? "Prédiction" : "Ton vote"}
+          Question {question.id}/{TOTAL_QUESTIONS} · Ton vote
         </p>
         <h1 className="mt-2 text-2xl font-bold sm:text-3xl">{question.title}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {kind === "prediction" ? "Que va choisir la majorité ?" : question.prompt}
-        </p>
+        <p className="mt-1 text-sm text-muted-foreground">{question.prompt}</p>
       </div>
 
       <div className="grid gap-3">
         {options.map((o) => {
           const picked = myAnswer === o.id;
-          // En phase de prédiction, on affiche qui a prédit quoi sous chaque option.
-          const pickers =
-            kind === "prediction"
-              ? (answered
-                  .filter((r) => r.option_id === o.id)
-                  .map((r) => byId.get(r.participant_id))
-                  .filter(Boolean) as Participant[])
-              : [];
           return (
             <button
               key={o.id}
@@ -205,53 +187,27 @@ export function AnswerScreen({
               <span className="flex items-center gap-4">
                 <span className="text-2xl">{o.emoji}</span>
                 <span className="font-medium">{o.label}</span>
-                {kind === "prediction" && pickers.length > 0 && (
-                  <span className="ml-auto text-sm font-semibold text-primary">
-                    {pickers.length}
-                  </span>
-                )}
               </span>
-              {kind === "prediction" && pickers.length > 0 && (
-                <span className="flex flex-wrap gap-2 border-t border-white/5 pt-3">
-                  {pickers.map((p) => (
-                    <span
-                      key={p.id}
-                      className="flex items-center gap-2 rounded-full bg-surface-strong py-1 pl-1 pr-3 text-xs"
-                    >
-                      <Avatar name={p.name} size={20} />
-                      {p.name}
-                    </span>
-                  ))}
-                </span>
-              )}
             </button>
           );
         })}
       </div>
 
-      {kind === "prediction" ? (
-        <div>
-          <p className="text-xs uppercase tracking-widest text-muted-foreground">
-            Déjà prédit ({answeredNames.length}/{players.length})
-          </p>
+      <div>
+        <p className="mb-3 text-xs uppercase tracking-widest text-muted-foreground">
+          Vote anonyme · {answered.length}/{players.length} ont voté
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {players.map((p) => (
+            <Avatar
+              key={p.id}
+              name={p.name}
+              size={32}
+              done={answered.some((r) => r.participant_id === p.id)}
+            />
+          ))}
         </div>
-      ) : (
-        <div>
-          <p className="mb-3 text-xs uppercase tracking-widest text-muted-foreground">
-            Vote anonyme · {answered.length}/{players.length} ont voté
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {players.map((p) => (
-              <Avatar
-                key={p.id}
-                name={p.name}
-                size={32}
-                done={answered.some((r) => r.participant_id === p.id)}
-              />
-            ))}
-          </div>
-        </div>
-      )}
+      </div>
     </div>
   );
 }

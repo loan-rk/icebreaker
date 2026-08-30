@@ -4,8 +4,6 @@ import type { Phase } from "@/lib/game";
 
 const PHASE_LABEL: Record<Phase, string> = {
   lobby: "Lobby",
-  flash_predict: "Flash prédiction",
-  predict: "Prédictions",
   flash_vote: "Flash vote",
   vote: "Votes",
   reveal: "Révélation",

@@ -1,7 +1,5 @@
 export type Phase =
   | "lobby"
-  | "flash_predict"
-  | "predict"
   | "flash_vote"
   | "vote"
   | "reveal"
@@ -26,7 +24,7 @@ export type ResponseRow = {
   id: string;
   participant_id: string;
   question_id: number;
-  kind: "prediction" | "vote";
+  kind: "vote";
   option_id: string;
 };
 export type GameState = {
@@ -43,9 +41,7 @@ export const SAFETY_MS = 20000;
 export const TOTAL_QUESTIONS = 6;
 
 export const PHASE_DURATION: Partial<Record<Phase, number>> = {
-  flash_predict: FLASH_MS,
   flash_vote: FLASH_MS,
-  predict: SAFETY_MS,
   vote: SAFETY_MS,
 };
 
@@ -55,11 +51,7 @@ export function nextPhase(
 ): { phase: Phase; question_id: number } {
   switch (phase) {
     case "lobby":
-      return { phase: "flash_predict", question_id: 1 };
-    case "flash_predict":
-      return { phase: "predict", question_id: questionId };
-    case "predict":
-      return { phase: "flash_vote", question_id: questionId };
+      return { phase: "flash_vote", question_id: 1 };
     case "flash_vote":
       return { phase: "vote", question_id: questionId };
     case "vote":
@@ -67,7 +59,7 @@ export function nextPhase(
     case "reveal":
       return questionId >= TOTAL_QUESTIONS
         ? { phase: "final", question_id: questionId }
-        : { phase: "flash_predict", question_id: questionId + 1 };
+        : { phase: "flash_vote", question_id: questionId + 1 };
     default:
       return { phase: "final", question_id: questionId };
   }
