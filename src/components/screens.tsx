@@ -372,7 +372,7 @@ type NoeudConstellation = {
   lignes: string[];
   question_id: number;
   pct: number;
-  role: "majorite" | "minorite" | "partagee";
+  role: "majorite" | "minorite" | "partagee" | "neutre";
   x: number;
   y: number;
 };
@@ -391,7 +391,24 @@ export function Constellation({
   isHost?: boolean;
 }) {
   const svgRef = useRef<SVGSVGElement>(null);
+  const zoneRef = useRef<HTMLDivElement>(null);
   const [exportEnCours, setExportEnCours] = useState<null | "png" | "pdf">(null);
+
+  // Ratio largeur/hauteur de la zone d'affichage : sert à orienter la
+  // constellation (plus haute que large sur mobile portrait, plus large que
+  // haute sur desktop) pour qu'elle remplisse au mieux l'espace disponible.
+  const [ratioZone, setRatioZone] = useState(1.3);
+  useEffect(() => {
+    const zone = zoneRef.current;
+    if (!zone || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(([entry]) => {
+      const { width, height } = entry!.contentRect;
+      // arrondi : évite de recalculer la géométrie à chaque pixel d'un resize.
+      if (width > 0 && height > 0) setRatioZone(Math.round((width / height) * 50) / 50);
+    });
+    observer.observe(zone);
+    return () => observer.disconnect();
+  }, []);
 
   const lancerExport = async (type: "png" | "pdf") => {
     if (!svgRef.current || exportEnCours) return;
@@ -419,7 +436,6 @@ export function Constellation({
     const questionIds = [...new Set(options.map((o) => o.question_id))].sort((a, b) => a - b);
     const N = questionIds.length;
 
-    const APLATISSEMENT = 0.78;
     // Écartement latéral visé entre deux options voisines d'une même question.
     const ECART_PX = 130;
     // Distance radiale minimale entre le centre d'un groupe et ses options.
@@ -444,12 +460,23 @@ export function Constellation({
       (2 * maxLibelle + 16) / (SECTEUR * GARDE),
     );
 
-    // viewBox dimensionné pour ne jamais rogner une pastille ni ses libellés
-    // (emoji + short_label + %), quel que soit le nombre de questions.
-    const MARGE = 44 + maxLibelle / 2;
-    const W = RAYON_EXTERNE + MARGE;
-    const H_HAUT = RAYON_EXTERNE * APLATISSEMENT + 52;
-    const H_BAS = RAYON_EXTERNE * APLATISSEMENT + MARGE;
+    // viewBox serré autour du dessin (juste la place des pastilles et de leurs
+    // libellés) pour que la constellation occupe un maximum de l'espace affiché.
+    const MARGE_H = 22 + maxLibelle / 2;
+    const W = RAYON_EXTERNE + MARGE_H;
+
+    // Aplatissement vertical de l'anneau : choisi pour que le viewBox épouse le
+    // ratio de la zone d'affichage. Borné pour ne jamais tasser les pastilles
+    // plus que la valeur historiquement calibrée (0,78) et ne pas trop étirer.
+    const MARGE_V = 30 + 80; // marges verticales fixes du viewBox (haut + bas)
+    const hauteurCible = (2 * W) / Math.max(0.35, ratioZone);
+    const APLATISSEMENT = Math.min(
+      1.5,
+      Math.max(0.78, (hauteurCible - MARGE_V) / (2 * RAYON_EXTERNE)),
+    );
+
+    const H_HAUT = RAYON_EXTERNE * APLATISSEMENT + 30;
+    const H_BAS = RAYON_EXTERNE * APLATISSEMENT + 80;
     const CX = W;
     const CY = H_HAUT;
     const viewBox = `0 0 ${Math.round(2 * W)} ${Math.round(H_HAUT + H_BAS)}`;
@@ -479,11 +506,32 @@ export function Constellation({
       const second = classement[1];
 
       // Question tranchée uniquement si la 1re devance nettement la 2e.
+      // (Calcul inchangé : il porte sur *toutes* les options, y compris à 0.)
       const ecart = total > 0 && tete && second ? (tete.n - second.n) / total : 0;
       const tranchee = total > 0 && !!tete && tete.n > 0 && ecart >= MARGE_MAJORITE;
 
       const pct = (n: number) => (total ? Math.round((n / total) * 100) : 0);
-      const externes = tranchee ? compte.filter((c) => c.option.id !== tete!.option.id) : compte;
+
+      // Question sans aucun vote : une seule pastille neutre au centre du
+      // secteur, pour ne pas laisser de trou dans l'anneau.
+      if (total === 0) {
+        nodes.push({
+          id: `sans-vote-${qid}`,
+          emoji: "",
+          lignes: ["Pas de vote"],
+          question_id: qid,
+          pct: 0,
+          role: "neutre",
+          ...hub,
+        });
+        return;
+      }
+
+      // Seules les options ayant recueilli au moins un vote sont dessinées ;
+      // le calcul des % et de la majorité ci-dessus, lui, les garde toutes.
+      const externes = (
+        tranchee ? compte.filter((c) => c.option.id !== tete!.option.id) : compte
+      ).filter((c) => c.n > 0);
 
       if (tranchee && tete) {
         nodes.push({
@@ -517,32 +565,38 @@ export function Constellation({
     });
 
     return { nodes, hubs, questionIds, viewBox };
-  }, [options, responses]);
+  }, [options, responses, ratioZone]);
 
   // Deux familles de traits seulement : l'anneau qui relie les questions,
   // et un rayon court entre le centre de chaque question et ses options.
   const anneau = hubs.map((h, i) => ({ a: h, b: hubs[(i + 1) % hubs.length]! }));
   const rayons = nodes
-    .filter((n) => n.role !== "majorite")
+    .filter((n) => n.role !== "majorite" && n.role !== "neutre")
     .map((n) => ({ n, hub: hubs[questionIds.indexOf(n.question_id)]! }));
 
   const style = {
     majorite: { r: 23, fill: "#FF7F50", stroke: "#FF7F50", label: "#FFFFFF", pct: "#FF7F50" },
     partagee: { r: 22, fill: "#3a3a3a", stroke: "#6f6f6f", label: "#D8D8D8", pct: "#9a9a9a" },
     minorite: { r: 17, fill: "#2e2e2e", stroke: "#4a4a4a", label: "#9a9a9a", pct: "#7a7a7a" },
+    neutre: { r: 15, fill: "#2a2a2a", stroke: "#454545", label: "#8a8a8a", pct: "#8a8a8a" },
   } as const;
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-      <div className="mx-auto flex min-h-full w-full max-w-5xl flex-col items-center justify-center gap-4 px-4 py-8 sm:gap-6 sm:py-16">
-        <div className="text-center">
-          <p className="flex items-center justify-center gap-2 text-xs uppercase tracking-widest text-primary">
-            <Radio className="h-4 w-4" /> Portrait-robot
-          </p>
-          <h1 className="mt-2 text-2xl font-bold sm:text-3xl">La constellation de RadioKing</h1>
-        </div>
+    <div className="flex min-h-0 flex-1 flex-col items-center gap-1.5 px-1 py-2 sm:gap-3 sm:px-6 sm:py-5">
+      <div className="shrink-0 text-center">
+        <p className="flex items-center justify-center gap-2 text-[0.65rem] uppercase tracking-widest text-primary sm:text-xs">
+          <Radio className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> Portrait-robot
+        </p>
+        <h1 className="text-lg font-bold sm:mt-2 sm:text-3xl">La constellation de RadioKing</h1>
+      </div>
 
-        <svg ref={svgRef} viewBox={viewBox} className="w-full max-w-3xl">
+      <div ref={zoneRef} className="flex min-h-0 w-full flex-1 items-center justify-center">
+        <svg
+          ref={svgRef}
+          viewBox={viewBox}
+          preserveAspectRatio="xMidYMid meet"
+          className="h-full w-full"
+        >
           {anneau.map((e, i) => (
             <line
               key={`anneau-${i}`}
@@ -590,9 +644,11 @@ export function Constellation({
                   stroke={st.stroke}
                   strokeWidth={1.5}
                 />
-                <text x={n.x} y={n.y + st.r * 0.28} textAnchor="middle" fontSize={st.r * 0.85}>
-                  {n.emoji}
-                </text>
+                {n.emoji && (
+                  <text x={n.x} y={n.y + st.r * 0.28} textAnchor="middle" fontSize={st.r * 0.85}>
+                    {n.emoji}
+                  </text>
+                )}
                 <text
                   x={n.x}
                   y={n.y + st.r + 13}
@@ -606,42 +662,44 @@ export function Constellation({
                     </tspan>
                   ))}
                 </text>
-                <text
-                  x={n.x}
-                  y={n.y + st.r + 15 + n.lignes.length * (LABEL_FONT + 2)}
-                  textAnchor="middle"
-                  fontSize={PCT_FONT}
-                  fontWeight={700}
-                  fill={st.pct}
-                >
-                  {n.pct}%
-                </text>
+                {n.role !== "neutre" && (
+                  <text
+                    x={n.x}
+                    y={n.y + st.r + 15 + n.lignes.length * (LABEL_FONT + 2)}
+                    textAnchor="middle"
+                    fontSize={PCT_FONT}
+                    fontWeight={700}
+                    fill={st.pct}
+                  >
+                    {n.pct}%
+                  </text>
+                )}
               </g>
             );
           })}
         </svg>
-
-        {isHost && (
-          <div className="mt-1 flex flex-wrap items-center justify-center gap-2">
-            <button
-              onClick={() => void lancerExport("png")}
-              disabled={exportEnCours !== null}
-              className="flex items-center gap-1.5 rounded-full border border-white/10 px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:border-white/25 hover:text-foreground disabled:opacity-40"
-            >
-              <Download className="h-3.5 w-3.5" />
-              {exportEnCours === "png" ? "Génération…" : "Constellation PNG"}
-            </button>
-            <button
-              onClick={() => void lancerExport("pdf")}
-              disabled={exportEnCours !== null}
-              className="flex items-center gap-1.5 rounded-full border border-white/10 px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:border-white/25 hover:text-foreground disabled:opacity-40"
-            >
-              <FileText className="h-3.5 w-3.5" />
-              {exportEnCours === "pdf" ? "Génération…" : "Résumé PDF"}
-            </button>
-          </div>
-        )}
       </div>
+
+      {isHost && (
+        <div className="flex shrink-0 flex-wrap items-center justify-center gap-2">
+          <button
+            onClick={() => void lancerExport("png")}
+            disabled={exportEnCours !== null}
+            className="flex items-center gap-1.5 rounded-full border border-white/10 px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:border-white/25 hover:text-foreground disabled:opacity-40"
+          >
+            <Download className="h-3.5 w-3.5" />
+            {exportEnCours === "png" ? "Génération…" : "Constellation PNG"}
+          </button>
+          <button
+            onClick={() => void lancerExport("pdf")}
+            disabled={exportEnCours !== null}
+            className="flex items-center gap-1.5 rounded-full border border-white/10 px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:border-white/25 hover:text-foreground disabled:opacity-40"
+          >
+            <FileText className="h-3.5 w-3.5" />
+            {exportEnCours === "pdf" ? "Génération…" : "Résumé PDF"}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

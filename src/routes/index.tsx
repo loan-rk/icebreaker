@@ -16,16 +16,16 @@ import {
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Icebreaker RadioKing — Réunion mensuelle" },
+      { title: "This or That - RadioKing" },
       {
         name: "description",
         content:
-          "Jeu d'icebreaker temps réel pour la réunion mensuelle RadioKing : vote et découvre le portrait-robot de l'équipe.",
+          "Jeu This or That pour l'icebreaker de la réunion mensuelle RadioKing : vote et découvre la constellation de l'équipe !",
       },
-      { property: "og:title", content: "Icebreaker RadioKing — Réunion mensuelle" },
+      { property: "og:title", content: "This or That - RadioKing" },
       {
         property: "og:description",
-        content: "Vote anonymement et révèle la constellation de l'équipe RadioKing.",
+        content: "Vote et révèle la constellation de RadioKing !",
       },
     ],
   }),
