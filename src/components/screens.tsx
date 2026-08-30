@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Users, ArrowRight, Radio, Download, FileText } from "lucide-react";
 import { Avatar } from "@/components/Avatar";
-import { RadioKingPlayer } from "@/components/RadioKingPlayer";
 import { type Option, type Participant, type Question, type ResponseRow } from "@/lib/game";
 import { exporterConstellationPng, exporterResumePdf } from "@/lib/constellation-export";
 import { cn } from "@/lib/utils";
@@ -107,10 +106,6 @@ export function Lobby({
             Quitter
           </button>
         )}
-
-        {/* Lecteur radio RadioKing : discret, en bas de la carte, dans le flux
-            (ne recouvre donc aucun bouton). */}
-        <RadioKingPlayer className="mt-2" />
       </div>
     </div>
   );

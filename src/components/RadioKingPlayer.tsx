@@ -1,4 +1,5 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { Radio, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // Lecteur web fourni par RadioKing pour la webradio « avocadoradio ».
@@ -11,11 +12,25 @@ const PLAYER_SRC = "https://player.radioking.io/avocadoradio/?c=%2384000E&c2=%23
 const HELPER_SRC = "https://player.radioking.io/scripts/iframe.bundle.js";
 
 /**
- * Lecteur radio RadioKing, pensé pour vivre discrètement en bas d'un écran :
- * dans le flux (ne recouvre donc aucun bouton), largeur fluide plafonnée à
- * 470 px, hauteur fixe. Ne s'affiche pas si un lecteur casse la page.
+ * Lecteur radio RadioKing flottant et persistant.
+ *
+ * Monté une seule fois par le composant racine du jeu (pas dans un écran de
+ * phase), il reste donc à l'écran — et continue de jouer — du lobby jusqu'à la
+ * constellation finale, sans jamais être démonté lors d'un changement de phase.
+ *
+ * Il se présente comme une petite pastille dans un coin (en haut à droite sur
+ * mobile, en bas à droite sur desktop) qu'on déplie pour révéler le lecteur.
+ * L'iframe reste montée même repliée : la musique ne s'interrompt pas. Replié,
+ * il ne recouvre ni les boutons de vote ni le panneau animateur ; il se replie
+ * d'ailleurs tout seul quand `collapsed` passe à vrai (phase de vote).
  */
-export function RadioKingPlayer({ className }: { className?: string }) {
+export function RadioKingPlayer({ collapsed = false }: { collapsed?: boolean }) {
+  const [ouvert, setOuvert] = useState(false);
+
+  useEffect(() => {
+    if (collapsed) setOuvert(false);
+  }, [collapsed]);
+
   useEffect(() => {
     if (document.querySelector(`script[src="${HELPER_SRC}"]`)) return;
     const script = document.createElement("script");
@@ -25,16 +40,33 @@ export function RadioKingPlayer({ className }: { className?: string }) {
   }, []);
 
   return (
-    <div
-      className={cn("flex w-full max-w-[470px] shrink-0 flex-col items-center gap-1.5", className)}
-    >
-      <iframe
-        src={PLAYER_SRC}
-        title="Lecteur radio RadioKing — Avocado Radio"
-        loading="lazy"
-        scrolling="no"
-        className="h-[145px] w-full rounded-md border-0 shadow-lg"
-      />
+    <div className="fixed right-3 top-3 z-40 flex flex-col items-end gap-1.5 sm:bottom-3 sm:top-auto sm:flex-col-reverse">
+      <button
+        type="button"
+        onClick={() => setOuvert((o) => !o)}
+        aria-expanded={ouvert}
+        aria-label={ouvert ? "Replier le lecteur radio" : "Déplier le lecteur radio"}
+        className="flex items-center gap-1.5 rounded-full border border-white/10 bg-surface-strong/95 px-3 py-1.5 text-xs font-medium shadow-lg backdrop-blur transition-colors hover:border-white/25"
+      >
+        <Radio className="h-3.5 w-3.5 text-primary" />
+        Radio
+        <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", ouvert && "rotate-180")} />
+      </button>
+
+      <div
+        className={cn(
+          "w-[300px] max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-md shadow-lg transition-[height,opacity] duration-200",
+          ouvert ? "h-[145px] opacity-100" : "pointer-events-none h-0 opacity-0",
+        )}
+      >
+        <iframe
+          src={PLAYER_SRC}
+          title="Lecteur radio RadioKing — Avocado Radio"
+          loading="lazy"
+          scrolling="no"
+          className="h-[145px] w-full border-0"
+        />
+      </div>
     </div>
   );
 }

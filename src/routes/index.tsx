@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useGame } from "@/hooks/useGame";
 import { FLASH_MS } from "@/lib/game";
 import { HostPanel } from "@/components/HostPanel";
+import { RadioKingPlayer } from "@/components/RadioKingPlayer";
 import {
   AnswerScreen,
   Constellation,
@@ -143,6 +144,12 @@ function Index() {
         </svg>
       </div>
       <div className="relative z-10 flex min-h-0 flex-1 flex-col">{screen}</div>
+
+      {/* Lecteur radio persistant : monté ici (hors des écrans de phase), il
+          survit à tous les changements d'écran et joue en continu du lobby
+          jusqu'à la constellation. Replié pendant le vote pour ne rien masquer. */}
+      <RadioKingPlayer collapsed={phase === "vote"} />
+
       {isHost && (
         <HostPanel
           phase={phase}
