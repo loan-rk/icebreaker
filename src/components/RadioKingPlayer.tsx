@@ -28,9 +28,6 @@ export function RadioKingPlayer({ className }: { className?: string }) {
     <div
       className={cn("flex w-full max-w-[470px] shrink-0 flex-col items-center gap-1.5", className)}
     >
-      <p className="text-[0.7rem] uppercase tracking-widest text-muted-foreground/60">
-        En direct sur RadioKing
-      </p>
       <iframe
         src={PLAYER_SRC}
         title="Lecteur radio RadioKing — Avocado Radio"

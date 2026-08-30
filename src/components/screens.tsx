@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
-import { Users, ArrowRight, Radio } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Users, ArrowRight, Radio, Download, FileText } from "lucide-react";
 import { Avatar } from "@/components/Avatar";
 import { RadioKingPlayer } from "@/components/RadioKingPlayer";
 import { type Option, type Participant, type Question, type ResponseRow } from "@/lib/game";
+import { exporterConstellationPng, exporterResumePdf } from "@/lib/constellation-export";
 import { cn } from "@/lib/utils";
 
 /* ---------------- Join ---------------- */
@@ -384,10 +385,40 @@ type NoeudConstellation = {
 export function Constellation({
   options,
   responses,
+  questions = [],
+  players = [],
+  isHost = false,
 }: {
   options: Option[];
   responses: ResponseRow[];
+  questions?: Question[];
+  players?: Participant[];
+  isHost?: boolean;
 }) {
+  const svgRef = useRef<SVGSVGElement>(null);
+  const [exportEnCours, setExportEnCours] = useState<null | "png" | "pdf">(null);
+
+  const lancerExport = async (type: "png" | "pdf") => {
+    if (!svgRef.current || exportEnCours) return;
+    setExportEnCours(type);
+    try {
+      if (type === "png") {
+        await exporterConstellationPng(svgRef.current);
+      } else {
+        await exporterResumePdf(svgRef.current, {
+          questions,
+          options,
+          participants: players,
+          responses,
+        });
+      }
+    } catch (err) {
+      console.error("[constellation] export échoué", err);
+    } finally {
+      setExportEnCours(null);
+    }
+  };
+
   const { nodes, hubs, questionIds, viewBox } = useMemo(() => {
     const votes = responses.filter((r) => r.kind === "vote");
     const questionIds = [...new Set(options.map((o) => o.question_id))].sort((a, b) => a - b);
@@ -519,7 +550,7 @@ export function Constellation({
           </p>
         </div>
 
-        <svg viewBox={viewBox} className="w-full max-w-3xl">
+        <svg ref={svgRef} viewBox={viewBox} className="w-full max-w-3xl">
           {anneau.map((e, i) => (
             <line
               key={`anneau-${i}`}
@@ -597,6 +628,27 @@ export function Constellation({
             );
           })}
         </svg>
+
+        {isHost && (
+          <div className="mt-1 flex flex-wrap items-center justify-center gap-2">
+            <button
+              onClick={() => void lancerExport("png")}
+              disabled={exportEnCours !== null}
+              className="flex items-center gap-1.5 rounded-full border border-white/10 px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:border-white/25 hover:text-foreground disabled:opacity-40"
+            >
+              <Download className="h-3.5 w-3.5" />
+              {exportEnCours === "png" ? "Génération…" : "Constellation PNG"}
+            </button>
+            <button
+              onClick={() => void lancerExport("pdf")}
+              disabled={exportEnCours !== null}
+              className="flex items-center gap-1.5 rounded-full border border-white/10 px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:border-white/25 hover:text-foreground disabled:opacity-40"
+            >
+              <FileText className="h-3.5 w-3.5" />
+              {exportEnCours === "pdf" ? "Génération…" : "Résumé PDF"}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

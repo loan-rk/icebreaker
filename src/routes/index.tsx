@@ -114,7 +114,15 @@ function Index() {
       />
     );
   } else if (phase === "final") {
-    screen = <Constellation options={g.options} responses={g.responses} />;
+    screen = (
+      <Constellation
+        options={g.options}
+        responses={g.responses}
+        questions={g.questions}
+        players={g.players}
+        isHost={isHost}
+      />
+    );
   }
 
   return (
