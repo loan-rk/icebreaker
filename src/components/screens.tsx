@@ -542,12 +542,9 @@ export function Constellation({
       <div className="mx-auto flex min-h-full w-full max-w-5xl flex-col items-center justify-center gap-4 px-4 py-8 sm:gap-6 sm:py-16">
         <div className="text-center">
           <p className="flex items-center justify-center gap-2 text-xs uppercase tracking-widest text-primary">
-            <Radio className="h-4 w-4" /> Portrait-robot RadioKing
+            <Radio className="h-4 w-4" /> Portrait-robot
           </p>
-          <h1 className="mt-2 text-2xl font-bold sm:text-3xl">La Constellation</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            En corail, les choix qui font consensus. En gris, les questions qui nous divisent.
-          </p>
+          <h1 className="mt-2 text-2xl font-bold sm:text-3xl">La constellation de RadioKing</h1>
         </div>
 
         <svg ref={svgRef} viewBox={viewBox} className="w-full max-w-3xl">
