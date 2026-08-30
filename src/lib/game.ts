@@ -35,7 +35,6 @@ export type GameState = {
   phase_started_at: string;
 };
 
-export const MAX_PLAYERS = 20;
 export const FLASH_MS = 2000;
 export const SAFETY_MS = 20000;
 

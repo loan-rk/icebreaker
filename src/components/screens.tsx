@@ -334,10 +334,42 @@ export function RevealScreen({
 // "partagée" : aucune réponse n'est mise en avant.
 const MARGE_MAJORITE = 0.1;
 
+const LABEL_FONT = 10.5;
+const PCT_FONT = 9.5;
+// Largeur approximative d'un glyphe (fraction de la taille de police) : sert à
+// estimer la place occupée par un libellé pour éviter tout chevauchement.
+const LARGEUR_GLYPHE = 0.6;
+
+/** Coupe un libellé trop long en deux lignes équilibrées (sur espace ou tiret). */
+function couperLibelle(s: string): string[] {
+  if (s.length <= 12) return [s];
+  const seps: number[] = [];
+  for (let i = 0; i < s.length; i++) if (s[i] === " " || s[i] === "-") seps.push(i);
+  if (seps.length === 0) return [s];
+  let best = seps[0]!;
+  let bestDiff = Infinity;
+  for (const i of seps) {
+    const gauche = s[i] === "-" ? i + 1 : i;
+    const diff = Math.abs(gauche - (s.length - (i + 1)));
+    if (diff < bestDiff) {
+      bestDiff = diff;
+      best = i;
+    }
+  }
+  const coupe = s[best] === "-" ? best + 1 : best;
+  return [s.slice(0, coupe).trim(), s.slice(best + 1).trim()];
+}
+
+function largeurLibelle(s: string): number {
+  return Math.max(
+    ...couperLibelle(s).map((l) => l.length * LABEL_FONT * LARGEUR_GLYPHE + 10),
+  );
+}
+
 type NoeudConstellation = {
   id: string;
   emoji: string;
-  short_label: string;
+  lignes: string[];
   question_id: number;
   pct: number;
   role: "majorite" | "minorite" | "partagee";
@@ -352,18 +384,50 @@ export function Constellation({
   options: Option[];
   responses: ResponseRow[];
 }) {
-  const { nodes, hubs, questionIds } = useMemo(() => {
+  const { nodes, hubs, questionIds, viewBox } = useMemo(() => {
     const votes = responses.filter((r) => r.kind === "vote");
     const questionIds = [...new Set(options.map((o) => o.question_id))].sort((a, b) => a - b);
+    const N = questionIds.length;
 
-    const CX = 400;
-    const CY = 335;
-    const RAYON_CENTRE = 168;
-    const RAYON_EXTERNE = 288;
     const APLATISSEMENT = 0.78;
-    // Écartement visé entre deux options voisines, en pixels : converti en
-    // angle selon le rayon, pour que les pastilles ne se chevauchent jamais.
-    const ECART_PX = 112;
+    // Écartement latéral visé entre deux options voisines d'une même question.
+    const ECART_PX = 130;
+    // Distance radiale minimale entre le centre d'un groupe et ses options.
+    const GAP_EXTERNE = 150;
+    // Fraction du secteur angulaire d'une question réellement utilisée par ses
+    // options : le reste sert de gouttière entre deux questions voisines.
+    const GARDE = 0.72;
+
+    // Largeur du plus grand libellé du jeu : dimensionne les rayons pour que ni
+    // les pastilles ni leurs textes ne se chevauchent, quel que soit N.
+    const maxLibelle = Math.max(
+      44,
+      ...options.map((o) => largeurLibelle(o.short_label)),
+    );
+
+    const SECTEUR = N > 0 ? (2 * Math.PI) / N : 2 * Math.PI;
+    // Rayon de l'anneau des questions : croît avec N (corde constante entre
+    // groupes voisins) et avec la largeur des libellés.
+    const RAYON_CENTRE =
+      N > 1
+        ? Math.max(168, maxLibelle / (SECTEUR * 0.85), 80 / Math.sin(Math.PI / N))
+        : 0;
+    // Rayon des options : assez grand pour poser côte à côte les deux options
+    // d'une question partagée sans que leurs libellés se touchent.
+    const RAYON_EXTERNE = Math.max(
+      RAYON_CENTRE + GAP_EXTERNE,
+      (2 * maxLibelle + 16) / (SECTEUR * GARDE),
+    );
+
+    // viewBox dimensionné pour ne jamais rogner une pastille ni ses libellés
+    // (emoji + short_label + %), quel que soit le nombre de questions.
+    const MARGE = 44 + maxLibelle / 2;
+    const W = RAYON_EXTERNE + MARGE;
+    const H_HAUT = RAYON_EXTERNE * APLATISSEMENT + 52;
+    const H_BAS = RAYON_EXTERNE * APLATISSEMENT + MARGE;
+    const CX = W;
+    const CY = H_HAUT;
+    const viewBox = `0 0 ${Math.round(2 * W)} ${Math.round(H_HAUT + H_BAS)}`;
 
     const position = (angle: number, rayon: number) => ({
       x: CX + Math.cos(angle) * rayon,
@@ -400,7 +464,7 @@ export function Constellation({
         nodes.push({
           id: tete.option.id,
           emoji: tete.option.emoji,
-          short_label: tete.option.short_label,
+          lignes: couperLibelle(tete.option.short_label),
           question_id: qid,
           pct: pct(tete.n),
           role: "majorite",
@@ -408,26 +472,32 @@ export function Constellation({
         });
       }
 
+      // Options non mises en avant : éventail latéral au rayon externe. L'angle
+      // de l'éventail est borné par la gouttière du secteur pour ne jamais
+      // empiéter sur la question voisine.
+      const m = externes.length;
+      const eventail = Math.min(
+        (m <= 1 ? 0 : m - 1) * (ECART_PX / RAYON_EXTERNE),
+        SECTEUR * GARDE,
+      );
       externes.forEach((c, k) => {
-        // Sur une question partagée, les options restent groupées à mi-distance.
-        const rayon = tranchee ? RAYON_EXTERNE : (RAYON_CENTRE + RAYON_EXTERNE) / 2;
-        const decalage = (k - (externes.length - 1) / 2) * (ECART_PX / rayon);
+        const decalage = m <= 1 ? 0 : ((k - (m - 1) / 2) / (m - 1)) * eventail;
         nodes.push({
           id: c.option.id,
           emoji: c.option.emoji,
-          short_label: c.option.short_label,
+          lignes: couperLibelle(c.option.short_label),
           question_id: qid,
           pct: pct(c.n),
           role: tranchee ? "minorite" : "partagee",
-          ...position(angle + decalage, rayon),
+          ...position(angle + decalage, RAYON_EXTERNE),
         });
       });
     });
 
-    return { nodes, hubs, questionIds };
+    return { nodes, hubs, questionIds, viewBox };
   }, [options, responses]);
 
-  // Deux familles de traits seulement : l'anneau qui relie les 6 questions,
+  // Deux familles de traits seulement : l'anneau qui relie les questions,
   // et un rayon court entre le centre de chaque question et ses options.
   const anneau = hubs.map((h, i) => ({ a: h, b: hubs[(i + 1) % hubs.length]! }));
   const rayons = nodes
@@ -435,7 +505,7 @@ export function Constellation({
     .map((n) => ({ n, hub: hubs[questionIds.indexOf(n.question_id)]! }));
 
   const style = {
-    majorite: { r: 33, fill: "#FF7F50", stroke: "#FF7F50", label: "#FFFFFF", pct: "#FF7F50" },
+    majorite: { r: 23, fill: "#FF7F50", stroke: "#FF7F50", label: "#FFFFFF", pct: "#FF7F50" },
     partagee: { r: 22, fill: "#3a3a3a", stroke: "#6f6f6f", label: "#D8D8D8", pct: "#9a9a9a" },
     minorite: { r: 17, fill: "#2e2e2e", stroke: "#4a4a4a", label: "#9a9a9a", pct: "#7a7a7a" },
   } as const;
@@ -452,7 +522,7 @@ export function Constellation({
         </p>
       </div>
 
-      <svg viewBox="0 0 800 700" className="w-full">
+      <svg viewBox={viewBox} className="w-full">
         {anneau.map((e, i) => (
           <line
             key={`anneau-${i}`}
@@ -486,9 +556,9 @@ export function Constellation({
                 <circle
                   cx={n.x}
                   cy={n.y}
-                  r={st.r + 10}
+                  r={st.r + 5}
                   fill="#FF7F50"
-                  opacity={0.12}
+                  opacity={0.1}
                   className="animate-pulse-ring"
                 />
               )}
@@ -503,14 +573,24 @@ export function Constellation({
               <text x={n.x} y={n.y + st.r * 0.28} textAnchor="middle" fontSize={st.r * 0.85}>
                 {n.emoji}
               </text>
-              <text x={n.x} y={n.y + st.r + 18} textAnchor="middle" fontSize={12} fill={st.label}>
-                {n.short_label}
+              <text
+                x={n.x}
+                y={n.y + st.r + 13}
+                textAnchor="middle"
+                fontSize={LABEL_FONT}
+                fill={st.label}
+              >
+                {n.lignes.map((ligne, i) => (
+                  <tspan key={i} x={n.x} dy={i === 0 ? 0 : LABEL_FONT + 2}>
+                    {ligne}
+                  </tspan>
+                ))}
               </text>
               <text
                 x={n.x}
-                y={n.y + st.r + 33}
+                y={n.y + st.r + 15 + n.lignes.length * (LABEL_FONT + 2)}
                 textAnchor="middle"
-                fontSize={11}
+                fontSize={PCT_FONT}
                 fontWeight={700}
                 fill={st.pct}
               >

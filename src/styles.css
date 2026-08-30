@@ -36,8 +36,8 @@
   --color-surface: var(--surface);
   --color-surface-strong: var(--surface-strong);
   --color-primary-glow: var(--primary-glow);
-  --font-sans: "Poppins", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Poppins", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Quicksand", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Quicksand", ui-sans-serif, system-ui, sans-serif;
 }
 
 :root {
