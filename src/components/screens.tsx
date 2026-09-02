@@ -338,32 +338,34 @@ const MARGE_MAJORITE = 0.1;
 
 const LABEL_FONT = 11;
 const PCT_FONT = 10;
+// Interligne des libellés sur deux lignes (assez aéré pour rester lisible en petit).
+const INTERLIGNE = LABEL_FONT + 5;
 // Largeur approximative d'un glyphe (fraction de la taille de police) : sert à
 // estimer la place occupée par un libellé pour éviter tout chevauchement.
 const LARGEUR_GLYPHE = 0.6;
 
-/** Coupe un libellé trop long en deux lignes équilibrées (sur espace ou tiret,
- *  ou en dernier recours au milieu d'un mot insécable). */
+/**
+ * Coupe un libellé en deux lignes **uniquement entre deux mots** (sur une
+ * espace). Jamais au milieu d'un mot : un mot seul, même long, reste sur une
+ * seule ligne.
+ */
 function couperLibelle(s: string): string[] {
-  if (s.length <= 10) return [s];
-  const seps: number[] = [];
-  for (let i = 0; i < s.length; i++) if (s[i] === " " || s[i] === "-") seps.push(i);
-  if (seps.length === 0) {
-    const c = Math.ceil(s.length / 2);
-    return [s.slice(0, c) + "-", s.slice(c)];
-  }
-  let best = seps[0]!;
+  const label = s.trim();
+  const espaces: number[] = [];
+  for (let i = 0; i < label.length; i++) if (label[i] === " ") espaces.push(i);
+  // Court, ou aucune espace où couper → une seule ligne.
+  if (label.length <= 12 || espaces.length === 0) return [label];
+  // Coupe sur l'espace la plus proche du milieu.
+  let best = espaces[0]!;
   let bestDiff = Infinity;
-  for (const i of seps) {
-    const gauche = s[i] === "-" ? i + 1 : i;
-    const diff = Math.abs(gauche - (s.length - (i + 1)));
+  for (const i of espaces) {
+    const diff = Math.abs(i - (label.length - 1 - i));
     if (diff < bestDiff) {
       bestDiff = diff;
       best = i;
     }
   }
-  const coupe = s[best] === "-" ? best + 1 : best;
-  return [s.slice(0, coupe).trim(), s.slice(best + 1).trim()];
+  return [label.slice(0, best).trim(), label.slice(best + 1).trim()];
 }
 
 function largeurLibelle(s: string): number {
@@ -376,7 +378,7 @@ type NoeudConstellation = {
   lignes: string[];
   question_id: number;
   pct: number;
-  role: "majorite" | "minorite" | "partagee" | "neutre";
+  role: "majorite" | "minorite" | "partagee" | "neutre" | "ancre";
   x: number;
   y: number;
 };
@@ -529,6 +531,19 @@ export function Constellation({
           role: "majorite",
           ...hub,
         });
+      } else {
+        // Question partagée (égalité) : pas de pastille majoritaire au centre du
+        // groupe. On y pose un petit marqueur d'ancrage discret pour que
+        // l'anneau et les rayons ne convergent pas vers du vide.
+        nodes.push({
+          id: `ancre-${qid}`,
+          emoji: "",
+          lignes: [],
+          question_id: qid,
+          pct: 0,
+          role: "ancre",
+          ...hub,
+        });
       }
 
       // Options non mises en avant : éventail latéral au rayon externe. L'angle
@@ -557,7 +572,7 @@ export function Constellation({
   // et un rayon court entre le centre de chaque question et ses options.
   const anneau = hubs.map((h, i) => ({ a: h, b: hubs[(i + 1) % hubs.length]! }));
   const rayons = nodes
-    .filter((n) => n.role !== "majorite" && n.role !== "neutre")
+    .filter((n) => n.role !== "majorite" && n.role !== "neutre" && n.role !== "ancre")
     .map((n) => ({ n, hub: hubs[questionIds.indexOf(n.question_id)]! }));
 
   const style = {
@@ -565,6 +580,9 @@ export function Constellation({
     partagee: { r: 22, fill: "#3a3a3a", stroke: "#6f6f6f", label: "#D8D8D8", pct: "#9a9a9a" },
     minorite: { r: 17, fill: "#2e2e2e", stroke: "#4a4a4a", label: "#9a9a9a", pct: "#7a7a7a" },
     neutre: { r: 15, fill: "#2a2a2a", stroke: "#454545", label: "#8a8a8a", pct: "#8a8a8a" },
+    // Marqueur d'ancrage d'une question partagée : nettement plus petit qu'une
+    // pastille de réponse, gris discret.
+    ancre: { r: 5, fill: "#3f3f3f", stroke: "#5a5a5a", label: "#8a8a8a", pct: "#8a8a8a" },
   } as const;
 
   return (
@@ -672,23 +690,25 @@ export function Constellation({
                     {n.emoji}
                   </text>
                 )}
-                <text
-                  x={n.x}
-                  y={n.y + st.r + 13}
-                  textAnchor="middle"
-                  fontSize={LABEL_FONT}
-                  fill={st.label}
-                >
-                  {n.lignes.map((ligne, i) => (
-                    <tspan key={i} x={n.x} dy={i === 0 ? 0 : LABEL_FONT + 2}>
-                      {ligne}
-                    </tspan>
-                  ))}
-                </text>
-                {n.role !== "neutre" && (
+                {n.lignes.length > 0 && (
                   <text
                     x={n.x}
-                    y={n.y + st.r + 15 + n.lignes.length * (LABEL_FONT + 2)}
+                    y={n.y + st.r + 13}
+                    textAnchor="middle"
+                    fontSize={LABEL_FONT}
+                    fill={st.label}
+                  >
+                    {n.lignes.map((ligne, i) => (
+                      <tspan key={i} x={n.x} dy={i === 0 ? 0 : INTERLIGNE}>
+                        {ligne}
+                      </tspan>
+                    ))}
+                  </text>
+                )}
+                {(n.role === "majorite" || n.role === "minorite" || n.role === "partagee") && (
+                  <text
+                    x={n.x}
+                    y={n.y + st.r + 13 + n.lignes.length * INTERLIGNE}
                     textAnchor="middle"
                     fontSize={PCT_FONT}
                     fontWeight={700}
