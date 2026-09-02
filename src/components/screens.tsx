@@ -571,22 +571,24 @@ export function Constellation({
     <div className="flex min-h-0 flex-1 flex-col items-center gap-1.5 px-1 py-2 sm:gap-3 sm:px-6 sm:py-5">
       {/* Boutons d'export : en position fixe dans le coin haut-gauche (z-40,
           au-dessus du dessin), un coin qui ne chevauche ni le lecteur radio
-          (haut-droite / bas-droite) ni le panneau animateur (bas-centre). */}
-      {isHost && (
-        <div className="fixed left-2 top-2 z-40 flex flex-col gap-1.5 sm:left-3 sm:top-3">
-          <button
-            type="button"
-            onClick={() => void lancerExport("png")}
-            disabled={exportEnCours !== null}
-            aria-busy={exportEnCours === "png"}
-            title="Télécharger la constellation en PNG"
-            className="flex items-center gap-1.5 rounded-full border border-white/10 bg-surface-strong/95 px-2.5 py-2 text-xs text-muted-foreground shadow-lg backdrop-blur transition-colors hover:border-white/25 hover:text-foreground disabled:opacity-40"
-          >
-            <Download className="h-4 w-4 shrink-0" />
-            <span className="hidden sm:inline">
-              {exportEnCours === "png" ? "Génération…" : "Constellation PNG"}
-            </span>
-          </button>
+          (haut-droite / bas-droite) ni le panneau animateur (bas-centre).
+          Le PNG est ouvert à tous ; le PDF (données nominatives) reste réservé
+          à l'animateur. */}
+      <div className="fixed left-2 top-2 z-40 flex flex-col gap-1.5 sm:left-3 sm:top-3">
+        <button
+          type="button"
+          onClick={() => void lancerExport("png")}
+          disabled={exportEnCours !== null}
+          aria-busy={exportEnCours === "png"}
+          title="Télécharger la constellation en PNG"
+          className="flex items-center gap-1.5 rounded-full border border-white/10 bg-surface-strong/95 px-2.5 py-2 text-xs text-muted-foreground shadow-lg backdrop-blur transition-colors hover:border-white/25 hover:text-foreground disabled:opacity-40"
+        >
+          <Download className="h-4 w-4 shrink-0" />
+          <span className="hidden sm:inline">
+            {exportEnCours === "png" ? "Génération…" : "Constellation PNG"}
+          </span>
+        </button>
+        {isHost && (
           <button
             type="button"
             onClick={() => void lancerExport("pdf")}
@@ -600,8 +602,8 @@ export function Constellation({
               {exportEnCours === "pdf" ? "Génération…" : "Résumé PDF"}
             </span>
           </button>
-        </div>
-      )}
+        )}
+      </div>
 
       <div className="shrink-0 text-center">
         <p className="flex items-center justify-center gap-2 text-[0.65rem] uppercase tracking-widest text-primary sm:text-xs">
